@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "vocotype-ibus"
+dynamic = ["version"]
+description = "Linux IBus voice input method for VoCoType"
+readme = { file = "readme.md", content-type = "text/markdown" }
+requires-python = ">=3.12"
+license = { file = "LICENSE" }
+authors = [
+  { name = "VoCoType" }
+]
+dependencies = [
+  "sounddevice==0.5.2",
+  "librosa==0.11.0",
+  "soundfile==0.13.1",
+  "funasr_onnx==0.4.1",
+  "jieba==0.42.1",
+  "PyGObject>=3.42.0",
+  "modelscope==1.30.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/vocotype"
+
+[project.scripts]
+vocotype-ibus = "ibus.main:main"
+vocotype-download-models = "app.download_models:main"
+
+[tool.setuptools]
+py-modules = ["vocotype_version"]
+
+[tool.setuptools.packages.find]
+include = ["app*", "ibus*"]
+
+[tool.setuptools.dynamic]
+version = { attr = "vocotype_version.__version__" }

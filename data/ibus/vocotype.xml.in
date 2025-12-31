@@ -3,7 +3,7 @@
     <name>org.vocotype.IBus.VoCoType</name>
     <description>VoCoType Voice Input Method</description>
     <exec>VOCOTYPE_EXEC_PATH --ibus</exec>
-    <version>1.0.0</version>
+    <version>VOCOTYPE_VERSION</version>
     <author>VoCoType</author>
     <license>GPL</license>
     <homepage>https://github.com/vocotype</homepage>

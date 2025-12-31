@@ -26,7 +26,31 @@ logger = logging.getLogger(__name__)
 SAMPLE_RATE = 16000
 DEFAULT_NATIVE_SAMPLE_RATE = 44100
 BLOCK_MS = 20
-AUDIO_DEVICE = None  # None 表示使用默认输入设备
+
+
+def _load_audio_config():
+    """从配置文件加载音频设备"""
+    config_file = Path.home() / ".config" / "vocotype" / "audio.conf"
+    if not config_file.exists():
+        logger.warning("音频配置文件不存在: %s，使用默认设备", config_file)
+        return None, DEFAULT_NATIVE_SAMPLE_RATE
+
+    try:
+        import configparser
+        config = configparser.ConfigParser()
+        config.read(config_file)
+
+        device_id = config.getint('audio', 'device_id', fallback=None)
+        sample_rate = config.getint('audio', 'sample_rate', fallback=DEFAULT_NATIVE_SAMPLE_RATE)
+
+        logger.info("从配置加载: 设备=%s, 采样率=%d", device_id, sample_rate)
+        return device_id, sample_rate
+    except Exception as e:
+        logger.warning("读取音频配置失败: %s，使用默认设备", e)
+        return None, DEFAULT_NATIVE_SAMPLE_RATE
+
+
+AUDIO_DEVICE, CONFIGURED_SAMPLE_RATE = _load_audio_config()
 
 
 def resample_audio(audio: np.ndarray, orig_sr: int, target_sr: int) -> np.ndarray:
@@ -63,7 +87,7 @@ class VoCoTypeEngine(IBus.Engine):
         self._asr_server = None
         self._asr_initializing = False
         self._asr_ready = threading.Event()
-        self._native_sample_rate = DEFAULT_NATIVE_SAMPLE_RATE
+        self._native_sample_rate = CONFIGURED_SAMPLE_RATE
 
         logger.info("VoCoTypeEngine 实例已创建")
 
@@ -196,18 +220,6 @@ class VoCoTypeEngine(IBus.Engine):
                 self._stop_and_transcribe()
             return True
 
-    def do_focus_out(self):
-        """失去焦点时停止录音"""
-        if self._is_recording:
-            self._stop_recording()
-        return
-
-    def do_disable(self):
-        """禁用时清理"""
-        if self._is_recording:
-            self._stop_recording()
-        return
-
     def _start_recording(self):
         """开始录音"""
         if self._is_recording:
@@ -228,7 +240,7 @@ class VoCoTypeEngine(IBus.Engine):
                     break
 
             device = self._resolve_input_device(sd)
-            sample_rate = self._resolve_sample_rate(sd, device, DEFAULT_NATIVE_SAMPLE_RATE)
+            sample_rate = self._resolve_sample_rate(sd, device, CONFIGURED_SAMPLE_RATE)
             self._native_sample_rate = sample_rate
             block_size = int(sample_rate * BLOCK_MS / 1000)
 

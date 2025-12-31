@@ -1,133 +1,257 @@
-# VocoType - 精准的离线语音输入法
+# VoCoType Linux IBus 语音输入法
 
-<h2 align="center">您的声音，绝不离开电脑</h2>
+<h2 align="center">Linux 专用的离线语音输入法</h2>
 
-**VocoType** 是一款专为注重隐私和效率的专业人士打造的、**完全免费**的桌面端语音输入法。所有识别均在本地完成，无惧断网，不上传任何数据。
+**VoCoType Linux IBus** 是基于 [VoCoType](https://github.com/233stone/vocotype-cli) 核心引擎开发的 **Linux IBus 输入法**。
 
-这个 GitHub 项目是 VocoType 核心引擎的 **CLI (命令行) 开源版本**，主要面向开发者。
-
----
-
-### **➡️ 想获得最佳体验？请立即下载免费桌面版！**
-
-开箱即用，功能更完整，无需任何技术背景。
-
-**[立即访问官网，下载免费、完整的 VocoType 桌面版](https://vocotype.com)**
-
-## 功能简介
-
-VocoType 是一款智能语音输入工具，通过快捷键即可将语音实时转换为文字并自动输入到当前应用。支持 AI 优化文本、自定义替换词典等功能，让语音输入更高效、更准确。
-
-### 📹 演示视频
-
-<video controls width="100%">
-  <source src="https://s1.bib0.com/leilei/i/2025/11/04/5yba.mp4" type="video/mp4">
-  您的浏览器不支持视频播放。
-</video>
-
-
-## 下载
-
-| OS | Download |
-|---|---|
-| **Windows** | [![Setup](https://img.shields.io/badge/Setup-x64-blue)](https://github.com/233stone/vocotype-cli/releases/download/v1.1.4/VocoType_1.1.4_x64-setup.exe)  |
-| **macOS** | [![DMG](https://img.shields.io/badge/DMG-Apple%20Silicon-black)](https://github.com/233stone/vocotype-cli/releases/download/v1.1.2/VocoType_1.1.2_universal.dmg) [![DMG](https://img.shields.io/badge/DMG-Intel-black)](https://github.com/233stone/vocotype-cli/releases/download/v1.1.2/VocoType_1.1.2_universal.dmg)  |
----
-
-## 🤔 VocoType 为何与众不同？
-
-| 特性           |    ✅ **VocoType**     |  传统云端输入法   |  操作系统自带   |
-| :------------- | :--------------------: | :---------------: | :-------------: |
-| **隐私安全**   | **本地离线，绝不上传** | ❌ 数据需上传云端 | ⚠️ 隐私政策复杂 |
-| **网络依赖**   |    **完全无需联网**    |  ❌ 必须联网使用  |  ❌ 强依赖网络  |
-| **响应速度**   |      **0.1 秒级**      |  慢，受网速影响   | 慢，受网速影响  |
-| **定制化能力** |  **强大的自定义词表**  |      弱或无       |    基本没有     |
-
-## ✅ 核心功能
-
-- **完整的图形用户界面**：开箱即用，所有操作清晰直观。
-- **系统级全局输入**：在任何软件、任何文本框内都能直接语音输入。
-- **自定义词典**：支持添加 20 个常用术语、人名，提升识别准确率。
-- **100% 离线运行**：绝对的隐私和数据安全。
-- **旗舰级识别引擎**：精准识别中英混合内容。
-- **AI 智能优化**：支持选择多种 AI 模型，通过可定制的 Prompt 模板自动修正语音转录中的错别字、同音字和自我修正，智能识别口语中的修正指令（如"不对"、"改成"等），让输出文本更准确流畅。
-
-_(对于有更高需求的专业用户，应用内提供了升级到 Pro 版的选项，以解锁无限词典等高级功能。)_
-
-## 🎯 适用各类专业场景
-
-无论是文字工作者、律师、学者、游戏玩家，还是日常办公，VocoType 都能成为您值得信赖的效率伙伴。
-
-| 用户                | 场景                                                                                           |
-| :------------------ | :--------------------------------------------------------------------------------------------- |
-| **作家与创作者**    | 撰写文章、小说，整理会议纪要，让思绪通过语音即时转化为文字，心无旁骛，专注于创作本身。         |
-| **法律 & 医疗人士** | 处理高度敏感的客户信息或病历时，100%离线确保数据安全。自定义词表更能轻松驾驭行业术语。         |
-| **学生与学者**      | 快速记录课堂笔记、整理访谈录音、撰写学术论文。告别繁琐的打字，将更多精力投入到思考与研究之中。 |
-| **开发者 & 程序员** | 无论是与 AI 结对编程，还是撰写技术文档，都能精准识别 `function`、`Kubernetes pod` 等专业术语。 |
-| **游戏玩家**        | 在激烈的游戏对战中，通过语音快速打字与队友交流，无需停下操作，保持游戏节奏，提升团队协作效率。 |
-
-## ✨ VocoType 核心引擎特性
-
-_所有 VocoType 版本共享同一个强大的核心引擎。_
-
-- **🛡️ 100% 离线，隐私无忧**：所有语音识别在您的电脑本地完成。
-- **⚡️ 旗舰级识别引擎**：中英混合输入同样精准，告别反复修改。
-- **⚙️ 高度可定制**：独创的替换词表功能，让人名、地名、行业术语一次就对。
-- **💻 轻量化设计**：仅需 700MB 内存，纯 CPU 推理，无需昂贵显卡。
-- **🚀 0.1 秒级响应**：感受所言即所得的畅快，让您的灵感不再因等待而中断。
+在 AI 辅助时代，语音输入已成为提升效率的重要工具。本项目将 VoCoType 的强大离线语音识别能力集成到 Linux 的 IBus 输入法框架中，让所有 Linux 用户都能享受流畅的语音输入体验。
 
 ---
 
-## 🛠️ 【开发者专属】CLI 版安装指南
+## 💡 为什么选择离线语音输入法？
 
-**请注意：** 此版本面向有一定技术背景的开发者。如果您不熟悉命令行，我们强烈建议您访问官网，下载简单易用的 **VocoType 免费桌面版**。
+### 🔒 隐私安全第一
+- **100% 本地离线**，所有语音数据不上传任何服务器
+- 适合处理敏感文档、工作邮件、个人日记
+- 符合企业安全规范和隐私保护要求
+
+### 🚀 提升效率利器
+- 语音输入比键盘打字更快、更自然
+- 适合长文本输入：文章、报告、邮件、聊天
+- **特别适合开发者**：快速输入代码注释、commit message、技术文档
+- **AI 时代必备**：与 ChatGPT、Claude、Cursor 等 AI 工具配合使用
+
+### 🐧 原生 Linux 体验
+- 完美融入 IBus 输入法框架
+- 支持所有 Linux 发行版 (Fedora, Ubuntu, Debian, Arch 等)
+- 在任何应用中都能使用：浏览器、终端、编辑器、办公软件
+
+---
+
+## ✨ 核心特性
+
+基于 VoCoType 强大的核心引擎，所有原版优势完整保留：
+
+- **🛡️ 100% 离线，隐私无忧**：所有语音识别在您的电脑本地完成，不上传任何数据
+- **⚡️ 旗舰级识别引擎**：基于 FunASR Paraformer 模型，中英混合输入同样精准
+- **🎯 PTT 按键说话**：按住 F9 说话，松开自动识别并输入
+- **💻 轻量化设计**：仅需 700MB 内存，纯 CPU 推理，无需显卡
+- **🚀 0.1 秒级响应**：感受所言即所得的畅快体验
+- **🔧 交互式配置**：自动识别麦克风设备，测试录音和识别效果
+- **📝 精准识别**：支持专业术语、人名、地名，识别准确率超过 95%
+
+**Linux 专属特性：**
+- **🐧 原生 IBus 集成**：完美融入 Linux 输入法体系
+- **⌨️ 全局可用**：在任何支持 IBus 的应用中都能使用
+- **🔄 开源透明**：代码完全开源，可审计、可定制
+
+---
+
+## 🛠️ 安装指南
 
 ### 1. 环境依赖
 
-- Python 3.12
-- 我们强烈建议使用 `uv` 或 `venv` 创建虚拟环境。
+- **Linux 发行版**: 支持 IBus 的任何发行版 (Fedora, Ubuntu, Debian, Arch 等)
+- **Python**: 3.12
+- **IBus**: 系统已安装并启用 IBus 输入法框架
 
-### 2. 克隆与安装
+### 2. 克隆仓库
 
 ```bash
-# 1. 克隆仓库
 git clone https://github.com/233stone/vocotype-cli.git
 cd vocotype-cli
+```
 
-# 2. (推荐) 创建并激活虚拟环境
+### 3. 安装依赖
+
+```bash
+# 创建并激活虚拟环境（推荐使用 uv）
 pip install uv
 uv venv --python 3.12
-source .venv/bin/activate  # macOS/Linux
-# 或者 .\.venv\Scripts\activate  (Windows)
+source .venv/bin/activate
 
-# 3. 安装依赖
+# 安装 Python 依赖
+uv pip install -e .
+
+# 可选：使用 pinned 版本
 uv pip install -r requirements.txt
 
-# 4. 运行
-python main.py
+# 安装 IBus 引擎
+./scripts/install-ibus.sh
 
-# 保存数据集运行
-python main.py --save-dataset
+# 注意：安装过程会自动运行音频配置向导，
+# 请按提示选择麦克风并测试录音效果
+
+# 重启 IBus
+ibus restart
 ```
 
 > **模型下载**：首次运行时，程序会自动下载约 500MB 的模型文件，请确保网络连接稳定。
+
+### 4. 添加输入法
+
+1. 打开系统设置 → 键盘 → 输入源
+2. 点击 "+" 添加输入源
+3. 滑到最底下点三个点 (⋮)
+4. 搜索 "voco"，选择 "中文"
+5. 选择 "VoCoType Voice Input" 并添加
+
+### 5. 使用方法
+
+1. 切换到 VoCoType 输入法 (通常是 `Super + Space` 或 `Ctrl + Space`)
+2. 按住 **F9** 说话
+3. 松开 F9，等待识别完成
+4. 识别的文字自动输入到光标位置
+
+---
+
+## 📹 使用场景
+
+### 日常应用
+- **聊天通讯**: 微信、QQ、Telegram、Slack、Discord 等
+- **文档撰写**: 写文章、报告、邮件、日记、笔记
+- **网页浏览**: 搜索关键词、填写表单、发表评论
+- **办公软件**: LibreOffice、WPS、在线文档编辑
+
+### 开发场景
+- **编写代码注释**: 快速添加详细的函数说明和文档注释
+- **Git Commit Message**: 语音输入详细的提交说明
+- **技术文档**: 撰写 README、设计文档、API 文档
+- **与 AI 对话**: 在 ChatGPT、Claude、Cursor 等工具中语音输入问题
+- **会议记录**: 快速记录技术会议的讨论内容
+- **Issue & PR**: 语音输入 GitHub Issue 描述和 Pull Request 说明
+
+### 适合人群
+- 💬 经常需要打字聊天的用户
+- 📝 文字工作者、作家、记者
+- 🧑‍💻 开发者、程序员
+- 🔬 研究人员和学者
+- 🤖 AI 工具使用者
+
+---
+
+## 🎯 核心优势对比
+
+| 特性           |    ✅ **VoCoType Linux IBus**     |  云端输入法   |  系统自带   |
+| :------------- | :--------------------------------: | :-----------: | :---------: |
+| **隐私安全**   | **本地离线，绝不上传** | ❌ 数据需上传云端 | ⚠️ 隐私政策复杂 |
+| **网络依赖**   |    **完全无需联网**    |  ❌ 必须联网使用  |  ❌ 强依赖网络  |
+| **响应速度**   |      **0.1 秒级**      |  慢，受网速影响   | 慢，受网速影响  |
+| **易用性**     |  **简单安装，即装即用**  |      简单       |     简单      |
+| **数据安全**   |  **100% 本地，零泄露风险**  |  ❌ 存在泄密风险  |  ❌ 存在泄密风险  |
+
+---
+
+## 🔧 高级配置
+
+### 重新配置音频设备
+
+如果需要更换麦克风或重新测试音频：
+
+```bash
+.venv/bin/python scripts/setup-audio.py
+```
+
+### 自定义快捷键
+
+默认使用 F9 作为 PTT (Push-to-Talk) 键。如需修改，请编辑 `ibus/engine.py`:
+
+```python
+PTT_KEYVAL = IBus.KEY_F9  # 修改为其他按键
+```
+
+可选按键：`IBus.KEY_F8`, `IBus.KEY_F10`, `IBus.KEY_Control_L` 等
+
+---
 
 ## 常见问题 (FAQ)
 
 **Q: 我的数据安全吗？**
 
-> A: **100%安全**。所有语音识别均在本地离线完成，您的音频数据不会上传到任何服务器。
+> A: **100% 安全**。所有语音识别均在本地离线完成，您的音频数据不会上传到任何服务器。
+
+**Q: 需要 GPU/显卡吗？资源占用如何？**
+
+> A: **不需要 GPU，只使用 CPU**。资源占用非常轻量：
+>
+> **内存占用：**
+> - 待机状态：200-300MB
+> - 识别时峰值：约 700MB
+>
+> **CPU 占用：**
+> - 待机状态：几乎 0%
+> - 录音时：5-10%（单核）
+> - 识别时：100-200%（多核，持续 0.1-0.5 秒）
+>
+> **磁盘占用：**
+> - 模型文件：约 500MB
+> - 代码和依赖：约 200-300MB
+>
+> **推荐配置：**
+> - 最低：4GB RAM + 双核 CPU
+> - 推荐：8GB RAM + 四核 CPU
+> - 不需要显卡，笔记本也能轻松运行
+
+**Q: 识别准确率如何？**
+
+> A: 基于 FunASR (阿里巴巴达摩院) 的 Paraformer 模型，在中文普通话场景下准确率超过 95%。支持中英混合输入。
+
+**Q: 可以在哪些应用中使用？**
+
+> A: 任何支持文本输入的应用都可以使用，包括：
+> - 终端 (Terminal)、代码编辑器 (VS Code, Vim, Emacs)
+> - 浏览器 (Chrome, Firefox)
+> - 办公软件 (LibreOffice, WPS)
+> - 聊天工具 (Telegram, Slack, Discord)
+
+**Q: 如何卸载？**
+
+> A: 执行以下命令：
+> ```bash
+> rm -rf ~/.local/share/vocotype
+> rm -rf ~/.local/share/ibus/component/vocotype.xml
+> rm -rf ~/.local/libexec/ibus-engine-vocotype
+> ibus restart
+> ```
+
+---
+
+## 👨‍💻 作者
+
+**Leonard Li** - Linux IBus 版本开发与维护
+
+📧 联系邮箱: [leo@lsamc.website](mailto:leo@lsamc.website)
 
 ## 📞 联系我们
 
-- **Bug 与建议**：请优先使用 GitHub Issues。
-- **关注我们获取最新动态**：[https://vocotype.com](https://vocotype.com)
+- **Bug 与建议**：请使用 GitHub Issues
+- **原项目**：[VoCoType](https://github.com/233stone/vocotype-cli)
+
+---
 
 ## 🙏 致谢
 
-VocoType 的诞生离不开以下优秀的开源项目：
+本项目基于以下优秀的开源项目：
 
-- **[FunASR](https://github.com/modelscope/FunASR)** - 阿里巴巴达摩院开源的语音识别框架，为 VocoType 提供了强大的离线语音识别能力。
-- **[QuQu](https://github.com/yan5xu/ququ)** - 优秀的开源项目，为 VocoType 提供了重要的技术参考和灵感。
+- **[VoCoType](https://github.com/233stone/vocotype-cli)** - 原始项目，提供了强大的离线语音识别核心引擎
+- **[FunASR](https://github.com/modelscope/FunASR)** - 阿里巴巴达摩院开源的语音识别框架，为 VoCoType 提供了强大的离线语音识别能力
+- **[QuQu](https://github.com/yan5xu/ququ)** - 优秀的开源项目，为 VoCoType 提供了重要的技术参考和灵感
 
 感谢这些开源社区的无私贡献！
+
+---
+
+## 📎 第三方依赖与模型许可说明
+
+本项目依赖的第三方库与模型均受各自许可证约束。详细列表与说明见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
+
+当前默认使用的模型包括：
+- `iic/speech_paraformer-large_asr_nat-zh-cn-16k-common-vocab8404-onnx`
+- `iic/speech_fsmn_vad_zh-cn-16k-common-onnx`
+- `iic/punc_ct-transformer_zh-cn-common-vocab272727-onnx`
+
+使用或分发前，请确认遵守上游许可证与模型条款。
+
+## 📄 许可证
+
+本项目继承原 VoCoType 项目的许可证。请查看 [LICENSE](LICENSE) 文件了解详情。

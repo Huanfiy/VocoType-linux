@@ -18,6 +18,7 @@ gi.require_version('IBus', '1.0')
 from gi.repository import IBus, GLib
 
 from ibus.factory import VoCoTypeFactory
+from vocotype_version import __version__
 
 logger = logging.getLogger(__name__)
 
@@ -49,7 +50,7 @@ class VoCoTypeIMApp:
         component = IBus.Component.new(
             "org.vocotype.IBus.VoCoType",
             "VoCoType Voice Input Method",
-            "1.0.0",
+            __version__,
             "GPL",
             "VoCoType",
             "https://github.com/vocotype",
@@ -92,7 +93,7 @@ def print_xml():
     <name>org.vocotype.IBus.VoCoType</name>
     <description>VoCoType Voice Input Method</description>
     <exec>{exec_path} --ibus</exec>
-    <version>1.0.0</version>
+    <version>{version}</version>
     <author>VoCoType</author>
     <license>GPL</license>
     <homepage>https://github.com/vocotype</homepage>
@@ -110,7 +111,7 @@ def print_xml():
             <symbol>🎤</symbol>
         </engine>
     </engines>
-</component>'''.format(exec_path=os.path.abspath(__file__)))
+</component>'''.format(exec_path=os.path.abspath(__file__), version=__version__))
 
 
 def main():
