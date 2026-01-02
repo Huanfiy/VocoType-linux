@@ -44,34 +44,46 @@
 - **🐧 原生 IBus 集成**：完美融入 Linux 输入法体系
 - **⌨️ 全局可用**：在任何支持 IBus 的应用中都能使用
 - **🔄 开源透明**：代码完全开源，可审计、可定制
+- **🎨 灵活选择**：纯语音版本或集成 Rime 拼音输入，按需安装
 
 ---
 
 ## 🛠️ 安装指南
 
-### 1. 环境依赖
+VoCoType Linux IBus 提供两种版本供您选择：
+
+| 版本 | 功能 | 适用场景 |
+|------|------|---------|
+| **🎤 纯语音版** | F9 语音输入 | 只需要语音输入，使用其他拼音输入法 |
+| **✨ 完整版** | F9 语音 + Rime 拼音 | 一个输入法同时支持语音和拼音 |
+
+### 📦 方式一：纯语音版（推荐新手）
+
+**特点**：
+- ✅ 仅语音输入功能（按 F9 说话）
+- ✅ 依赖少，安装简单
+- ✅ 可与其他拼音输入法（如 ibus-rime、fcitx-rime）配合使用
+- ✅ 适合已有喜欢的拼音输入法的用户
+
+**安装步骤**：
+
+#### 1. 环境依赖
 
 - **Linux 发行版**: 支持 IBus 的任何发行版 (Fedora, Ubuntu, Debian, Arch 等)
-- **Python**: 3.12
+- **Python**: 3.12+
 - **IBus**: 系统已安装并启用 IBus 输入法框架
 
-### 2. 克隆仓库
+#### 2. 克隆仓库
 
 ```bash
 git clone https://github.com/233stone/vocotype-cli.git
 cd vocotype-cli
 ```
 
-### 3. 安装依赖
+#### 3. 安装 IBus 引擎
 
 ```bash
-# 如果你想直接使用系统 Python（不使用虚拟环境），先安装依赖
-pip install -r requirements.txt
-
-# 否则跳过依赖安装，脚本会自动创建/使用虚拟环境并安装依赖
-# （优先使用 uv，如果系统已安装）
-
-# 安装 IBus 引擎
+# 安装 IBus 引擎（纯语音版）
 ./scripts/install-ibus.sh
 
 # 注意：安装过程会自动运行音频配置向导，
@@ -90,7 +102,7 @@ ibus restart
 
 > **模型下载**：首次运行时，程序会自动下载约 500MB 的模型文件，请确保网络连接稳定。
 
-### 4. 添加输入法
+#### 4. 添加输入法
 
 1. 打开系统设置 → 键盘 → 输入源
 2. 点击 "+" 添加输入源
@@ -98,12 +110,92 @@ ibus restart
 4. 搜索 "voco"，选择 "中文"
 5. 选择 "VoCoType Voice Input" 并添加
 
-### 5. 使用方法
+#### 5. 使用方法
 
 1. 切换到 VoCoType 输入法 (通常是 `Super + Space` 或 `Ctrl + Space`)
 2. 按住 **F9** 说话
 3. 松开 F9，等待识别完成
 4. 识别的文字自动输入到光标位置
+5. 需要拼音输入时，切换到其他拼音输入法（如 ibus-rime）
+
+---
+
+### 🎯 方式二：完整版（语音 + Rime 拼音）
+
+**特点**：
+- ✅ F9 语音输入
+- ✅ 其他按键使用 Rime 拼音输入
+- ✅ 一个输入法搞定所有需求
+- ✅ 共享 ibus-rime 的配置和词库
+- ⚠️ 需要额外安装 Rime 相关依赖
+
+**安装步骤**：
+
+#### 1. 安装系统依赖
+
+```bash
+# Fedora / RHEL / CentOS
+sudo dnf install librime-devel ibus-rime
+
+# Ubuntu / Debian
+sudo apt install librime-dev ibus-rime
+
+# Arch Linux
+sudo pacman -S librime ibus-rime
+```
+
+#### 2. 克隆仓库并安装
+
+```bash
+git clone https://github.com/233stone/vocotype-cli.git
+cd vocotype-cli
+
+# 安装完整版（包含 Rime 集成）
+./scripts/install-ibus.sh
+
+# 在安装过程中，还需要手动安装 pyrime
+# 根据脚本提示的虚拟环境路径执行：
+# 例如：
+# ~/.local/share/vocotype/.venv/bin/pip install pyrime
+# 或者如果选择项目虚拟环境：
+# .venv/bin/pip install pyrime
+
+# 重启 IBus
+ibus restart
+```
+
+#### 3. 添加和使用
+
+添加输入法的步骤与纯语音版相同。
+
+**使用方法**：
+1. 切换到 VoCoType 输入法
+2. **语音输入**：按住 F9 说话，松开后自动识别
+3. **拼音输入**：直接打字，Rime 会处理并显示候选词
+4. 在同一个输入法内无缝切换两种输入方式
+
+**配置说明**：
+- VoCoType 会使用 `~/.config/ibus/rime/` 作为配置目录
+- 与 ibus-rime 共享词库和配置
+- 如果已经配置过 ibus-rime，所有设置和词库都会自动继承
+
+---
+
+### 🆚 两种版本对比
+
+| 功能 | 纯语音版 | 完整版 |
+|------|---------|--------|
+| F9 语音输入 | ✅ | ✅ |
+| 拼音输入 | ❌ 需切换到其他输入法 | ✅ 内置 Rime |
+| 依赖 | 少 | 多（需 librime） |
+| 安装难度 | 简单 | 中等 |
+| 使用便利性 | 需切换输入法 | 一个输入法全搞定 |
+| 词库同步 | - | 与 ibus-rime 共享 |
+
+**建议**：
+- 🆕 新手用户：建议先安装**纯语音版**，体验语音输入功能
+- 🎯 进阶用户：如果想要一个输入法同时支持语音和拼音，选择**完整版**
+- 🔄 已有 ibus-rime 用户：选择**完整版**可以继承现有配置和词库
 
 ---
 

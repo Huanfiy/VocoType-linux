@@ -2,6 +2,7 @@
 """VoCoType IBus Engine - PTT语音输入法引擎
 
 按住F9说话，松开后识别并输入到光标处。
+其他按键转发给 Rime 处理。
 """
 
 from __future__ import annotations
@@ -11,14 +12,18 @@ import threading
 import queue
 import tempfile
 import os
+import time
 from pathlib import Path
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 
 import numpy as np
 
 import gi
 gi.require_version('IBus', '1.0')
 from gi.repository import IBus, GLib
+
+if TYPE_CHECKING:
+    from pyrime.session import Session as RimeSession
 
 logger = logging.getLogger(__name__)
 
@@ -74,6 +79,7 @@ class VoCoTypeEngine(IBus.Engine):
     def __init__(self, bus: IBus.Bus, object_path: str):
         # 需要显式传入 DBus 连接与 object_path，避免 GLib g_variant object_path 断言失败。
         super().__init__(connection=bus.get_connection(), object_path=object_path)
+        self._bus = bus
 
         # 状态
         self._is_recording = False
@@ -89,7 +95,26 @@ class VoCoTypeEngine(IBus.Engine):
         self._asr_ready = threading.Event()
         self._native_sample_rate = CONFIGURED_SAMPLE_RATE
 
-        logger.info("VoCoTypeEngine 实例已创建")
+        # Rime 集成（使用 pyrime 直接调用 librime）
+        # 如果未安装 pyrime，则禁用 Rime 集成
+        self._rime_session: Optional[RimeSession] = None
+        self._rime_available = self._check_rime_available()
+        self._rime_enabled = self._rime_available  # 只有 pyrime 可用时才启用
+        self._rime_init_lock = threading.Lock()
+
+        if self._rime_available:
+            logger.info("VoCoTypeEngine 实例已创建（Rime 集成已启用）")
+        else:
+            logger.info("VoCoTypeEngine 实例已创建（纯语音模式，Rime 集成未启用）")
+
+    def _check_rime_available(self) -> bool:
+        """检查 pyrime 是否可用"""
+        try:
+            import pyrime
+            return True
+        except ImportError:
+            logger.info("pyrime 未安装，Rime 集成功能将被禁用")
+            return False
 
     def _resolve_input_device(self, sd):
         """选择可用的输入设备，优先使用显式配置。"""
@@ -143,6 +168,60 @@ class VoCoTypeEngine(IBus.Engine):
 
         return preferred or SAMPLE_RATE
 
+    def _init_rime_session(self):
+        """初始化 Rime Session（懒加载）"""
+        if self._rime_session is not None:
+            return True
+
+        with self._rime_init_lock:
+            if self._rime_session is not None:
+                return True
+
+            try:
+                # 确保日志目录存在
+                log_dir = Path.home() / ".local" / "share" / "vocotype" / "rime"
+                log_dir.mkdir(parents=True, exist_ok=True)
+
+                from pyrime.api import Traits, API
+                from pyrime.session import Session
+                from pyrime.ime import Context
+
+                # 使用 ibus-rime 的用户数据目录
+                user_data_dir = Path.home() / ".config" / "ibus" / "rime"
+                if not user_data_dir.exists():
+                    user_data_dir.mkdir(parents=True, exist_ok=True)
+
+                # 查找共享数据目录
+                shared_dirs = [
+                    Path("/usr/share/rime-data"),
+                    Path("/usr/local/share/rime-data"),
+                ]
+                shared_data_dir = next((d for d in shared_dirs if d.exists()), None)
+                if shared_data_dir is None:
+                    logger.error("找不到 Rime 共享数据目录")
+                    return False
+
+                traits = Traits(
+                    shared_data_dir=str(shared_data_dir),
+                    user_data_dir=str(user_data_dir),
+                    log_dir=str(log_dir),
+                    distribution_name="VoCoType",
+                    distribution_code_name="vocotype",
+                    distribution_version="1.0",
+                    app_name="rime.vocotype",
+                )
+
+                api = API()
+                self._rime_session = Session(traits=traits, api=api)
+                logger.info("Rime Session 已创建，schema: %s", self._rime_session.get_current_schema())
+                return True
+
+            except Exception as exc:
+                logger.error("初始化 Rime Session 失败: %s", exc)
+                import traceback
+                traceback.print_exc()
+                return False
+
     def do_enable(self):
         """引擎启用"""
         logger.info("Engine enabled")
@@ -152,6 +231,14 @@ class VoCoTypeEngine(IBus.Engine):
         logger.info("Engine disabled")
         if self._is_recording:
             self._stop_recording()
+        # 清除 Rime 组合
+        if self._rime_session:
+            try:
+                self._rime_session.clear_composition()
+            except Exception:
+                pass
+        self._clear_preedit()
+        self.hide_lookup_table()
 
     def do_focus_in(self):
         """获得输入焦点"""
@@ -162,6 +249,14 @@ class VoCoTypeEngine(IBus.Engine):
         logger.info("Engine lost focus")
         if self._is_recording:
             self._stop_recording()
+        # 清除 Rime 组合
+        if self._rime_session:
+            try:
+                self._rime_session.clear_composition()
+            except Exception:
+                pass
+        self._clear_preedit()
+        self.hide_lookup_table()
 
     def _ensure_asr_ready(self):
         """确保ASR服务器已初始化（懒加载）"""
@@ -207,7 +302,9 @@ class VoCoTypeEngine(IBus.Engine):
 
         # 只处理F9键
         if keyval != self.PTT_KEYVAL:
-            return False
+            if self._is_ibus_switch_hotkey(keyval, state):
+                return False
+            return self._forward_key_to_rime(keyval, keycode, state)
 
         if not is_release:
             # F9按下 -> 开始录音
@@ -219,6 +316,116 @@ class VoCoTypeEngine(IBus.Engine):
             if self._is_recording:
                 self._stop_and_transcribe()
             return True
+
+    def _forward_key_to_rime(self, keyval, keycode, state) -> bool:
+        """将按键事件转发给 Rime（使用 pyrime）"""
+        if not self._rime_enabled:
+            return False
+
+        # 懒加载初始化 Rime
+        if not self._init_rime_session():
+            return False
+
+        try:
+            # 将 IBus modifier 转换为 Rime modifier
+            # IBus 和 Rime 都使用 X11 keysym 和类似的 modifier mask
+            is_release = bool(state & IBus.ModifierType.RELEASE_MASK)
+
+            # Rime 不处理 key release 事件
+            if is_release:
+                return False
+
+            # 构建 Rime modifier mask
+            rime_mask = 0
+            if state & IBus.ModifierType.SHIFT_MASK:
+                rime_mask |= 1 << 0  # kShiftMask
+            if state & IBus.ModifierType.LOCK_MASK:
+                rime_mask |= 1 << 1  # kLockMask
+            if state & IBus.ModifierType.CONTROL_MASK:
+                rime_mask |= 1 << 2  # kControlMask
+            if state & IBus.ModifierType.MOD1_MASK:
+                rime_mask |= 1 << 3  # kAltMask
+
+            # 处理按键
+            handled = self._rime_session.process_key(keyval, rime_mask)
+
+            # 检查是否有提交的文本
+            commit = self._rime_session.get_commit()
+            if commit and commit.text:
+                self._clear_preedit()
+                self.hide_lookup_table()
+                self.commit_text(IBus.Text.new_from_string(commit.text))
+                logger.info("Rime 提交文本: %s", commit.text)
+
+            # 更新预编辑和候选词
+            context = self._rime_session.get_context()
+            if context:
+                self._update_rime_ui(context)
+            else:
+                self._clear_preedit()
+                self.hide_lookup_table()
+
+            return handled
+
+        except Exception as exc:
+            logger.error("Rime 处理按键失败: %s", exc)
+            import traceback
+            traceback.print_exc()
+            return False
+
+    def _update_rime_ui(self, context):
+        """根据 Rime Context 更新 IBus UI"""
+        try:
+            # 更新预编辑文本
+            preedit_text = context.composition.preedit or ""
+            if preedit_text:
+                ibus_text = IBus.Text.new_from_string(preedit_text)
+                # 添加下划线样式
+                ibus_text.append_attribute(
+                    IBus.AttrType.UNDERLINE,
+                    IBus.AttrUnderline.SINGLE,
+                    0,
+                    len(preedit_text)
+                )
+                cursor_pos = context.composition.cursor_pos
+                self.update_preedit_text(ibus_text, cursor_pos, True)
+            else:
+                self._clear_preedit()
+
+            # 更新候选词列表
+            menu = context.menu
+            if menu.candidates:
+                lookup_table = IBus.LookupTable.new(
+                    page_size=menu.page_size,
+                    cursor_pos=menu.highlighted_candidate_index,
+                    cursor_visible=True,
+                    round=False
+                )
+
+                for i, candidate in enumerate(menu.candidates):
+                    text = candidate.text
+                    if candidate.comment:
+                        text = f"{text} {candidate.comment}"
+                    lookup_table.append_candidate(IBus.Text.new_from_string(text))
+
+                self.update_lookup_table(lookup_table, True)
+            else:
+                self.hide_lookup_table()
+
+        except Exception as exc:
+            logger.warning("更新 Rime UI 失败: %s", exc)
+
+    def _is_ibus_switch_hotkey(self, keyval, state) -> bool:
+        """让输入法切换热键走 IBus 全局处理"""
+        if keyval == IBus.KEY_space and state & IBus.ModifierType.CONTROL_MASK:
+            return True
+        if keyval == IBus.KEY_space and state & (IBus.ModifierType.SUPER_MASK | IBus.ModifierType.MOD4_MASK):
+            return True
+        if keyval in (IBus.KEY_Shift_L, IBus.KEY_Shift_R) and state & IBus.ModifierType.MOD1_MASK:
+            return True
+        if keyval in (IBus.KEY_Shift_L, IBus.KEY_Shift_R) and state & IBus.ModifierType.CONTROL_MASK:
+            return True
+        return False
 
     def _start_recording(self):
         """开始录音"""

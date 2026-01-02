@@ -12,3 +12,5 @@ pipdeptree.txt
 requirements.lock.txt
 todo.md
 /models
+vocotype_ibus.egg-info
+cc-gen-doc
