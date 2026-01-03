@@ -350,4 +350,12 @@ PTT_KEYVAL = IBus.KEY_F9  # 修改为其他按键
 
 本项目继承原 VoCoType 项目的许可证。请查看 [LICENSE](LICENSE) 文件了解详情。
 
-![Star History Chart](https://api.star-history.com/svg?repos=LeonardNJU/VocoType-ibus&type=Date)
+## Star History
+
+<a href="https://www.star-history.com/#LeonardNJU/VocoType-ibus&type=date&legend=top-left">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=LeonardNJU/VocoType-ibus&type=date&theme=dark&legend=top-left" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=LeonardNJU/VocoType-ibus&type=date&legend=top-left" />
+   <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=LeonardNJU/VocoType-ibus&type=date&legend=top-left" />
+ </picture>
+</a>
