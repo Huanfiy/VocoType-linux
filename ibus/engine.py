@@ -22,51 +22,22 @@ import gi
 gi.require_version('IBus', '1.0')
 from gi.repository import IBus, GLib
 
+from app.audio_utils import (
+    SAMPLE_RATE,
+    DEFAULT_NATIVE_SAMPLE_RATE,
+    load_audio_config,
+    resample_audio,
+)
+
 if TYPE_CHECKING:
     from pyrime.session import Session as RimeSession
 
 logger = logging.getLogger(__name__)
 
 # 音频参数
-SAMPLE_RATE = 16000
-DEFAULT_NATIVE_SAMPLE_RATE = 44100
 BLOCK_MS = 20
 
-
-def _load_audio_config():
-    """从配置文件加载音频设备"""
-    config_file = Path.home() / ".config" / "vocotype" / "audio.conf"
-    if not config_file.exists():
-        logger.warning("音频配置文件不存在: %s，使用默认设备", config_file)
-        return None, DEFAULT_NATIVE_SAMPLE_RATE
-
-    try:
-        import configparser
-        config = configparser.ConfigParser()
-        config.read(config_file)
-
-        device_id = config.getint('audio', 'device_id', fallback=None)
-        sample_rate = config.getint('audio', 'sample_rate', fallback=DEFAULT_NATIVE_SAMPLE_RATE)
-
-        logger.info("从配置加载: 设备=%s, 采样率=%d", device_id, sample_rate)
-        return device_id, sample_rate
-    except Exception as e:
-        logger.warning("读取音频配置失败: %s，使用默认设备", e)
-        return None, DEFAULT_NATIVE_SAMPLE_RATE
-
-
-AUDIO_DEVICE, CONFIGURED_SAMPLE_RATE = _load_audio_config()
-
-
-def resample_audio(audio: np.ndarray, orig_sr: int, target_sr: int) -> np.ndarray:
-    """重采样音频到目标采样率"""
-    if orig_sr == target_sr:
-        return audio
-    duration = len(audio) / orig_sr
-    target_length = int(duration * target_sr)
-    indices = np.linspace(0, len(audio) - 1, target_length)
-    return np.interp(indices, np.arange(len(audio)), audio.astype(np.float32)).astype(np.int16)
-
+AUDIO_DEVICE, CONFIGURED_SAMPLE_RATE = load_audio_config()
 
 class VoCoTypeEngine(IBus.Engine):
     """VoCoType IBus语音输入引擎"""

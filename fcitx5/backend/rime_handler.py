@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
-"""Rime 处理模块，复用 IBus 版本的逻辑
+"""Rime 处理模块
 
-此模块将 IBus 版本的 Rime 集成逻辑提取为独立模块，
-供 Fcitx 5 Backend 使用。
+提供 Rime 输入法引擎的按键处理功能。
 """
 from __future__ import annotations
 
@@ -18,10 +17,7 @@ logger = logging.getLogger(__name__)
 
 
 class RimeHandler:
-    """Rime 按键处理器
-
-    复用 IBus 版本的 Rime 集成逻辑 (ibus/engine.py)
-    """
+    """Rime 按键处理器"""
 
     def __init__(self):
         self.session: Optional[RimeSession] = None
@@ -34,10 +30,7 @@ class RimeHandler:
             logger.info("Rime 处理器已创建（pyrime 不可用，仅语音模式）")
 
     def _check_rime_available(self) -> bool:
-        """检查 pyrime 是否可用
-
-        复用自: ibus/engine.py:110-117
-        """
+        """检查 pyrime 是否可用"""
         try:
             import pyrime
             return True
@@ -47,8 +40,6 @@ class RimeHandler:
 
     def initialize(self) -> bool:
         """初始化 Rime Session（懒加载）
-
-        复用自: ibus/engine.py:171-223
 
         Returns:
             是否初始化成功
@@ -120,8 +111,6 @@ class RimeHandler:
 
     def process_key(self, keyval: int, mask: int) -> dict:
         """处理按键事件
-
-        复用自: ibus/engine.py:320-374
 
         Args:
             keyval: X11 keysym 值
@@ -198,10 +187,7 @@ class RimeHandler:
             return {"handled": False}
 
     def reset(self):
-        """重置 Rime 状态（清除组合）
-
-        复用自: ibus/engine.py:235-239
-        """
+        """重置 Rime 状态（清除组合）"""
         if self.session:
             try:
                 self.session.clear_composition()

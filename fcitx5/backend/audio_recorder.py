@@ -8,8 +8,6 @@
 2. 脚本开始录音
 3. 脚本输出临时音频文件路径到 stdout
 4. C++ Addon 读取路径，将其发送到 Backend 进行识别
-
-复用自: ibus/engine.py:430-496 的录音逻辑
 """
 from __future__ import annotations
 
@@ -28,7 +26,7 @@ import sounddevice as sd
 PROJECT_ROOT = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from ibus.engine import _load_audio_config, resample_audio, SAMPLE_RATE
+from app.audio_utils import load_audio_config, resample_audio, SAMPLE_RATE
 from app.wave_writer import write_wav
 
 logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
@@ -36,10 +34,7 @@ logger = logging.getLogger(__name__)
 
 
 class AudioRecorder:
-    """音频录制器
-
-    复用 IBus 版本的录音逻辑（ibus/engine.py:430-496）
-    """
+    """音频录制器"""
 
     def __init__(self, device_id: int | None, sample_rate: int):
         self.device_id = device_id
@@ -50,10 +45,7 @@ class AudioRecorder:
         self.stream = None
 
     def _resolve_input_device(self):
-        """选择可用的输入设备
-
-        复用自: ibus/engine.py:119-139
-        """
+        """选择可用的输入设备"""
         if self.device_id is not None:
             try:
                 info = sd.query_devices(self.device_id)
@@ -75,10 +67,7 @@ class AudioRecorder:
         return None
 
     def _resolve_sample_rate(self, device, preferred):
-        """选择可用采样率
-
-        复用自: ibus/engine.py:141-169
-        """
+        """选择可用采样率"""
         if preferred:
             try:
                 sd.check_input_settings(
@@ -220,7 +209,7 @@ def main():
     args = parser.parse_args()
 
     # 加载配置
-    configured_device, configured_sr = _load_audio_config()
+    configured_device, configured_sr = load_audio_config()
     device_id = args.device if args.device is not None else configured_device
     sample_rate = args.sample_rate if args.sample_rate != 44100 else configured_sr
 

@@ -83,9 +83,9 @@ private:
     void showError(fcitx::InputContext* ic, const std::string& error);
 
     /**
-     * 检查是否是 IBus 切换热键
+     * 检查是否是输入法切换热键
      */
-    bool isIBusSwitchHotkey(const fcitx::Key& key) const;
+    bool isIMSwitchHotkey(const fcitx::Key& key) const;
 
     fcitx::Instance* instance_;
     std::unique_ptr<IPCClient> ipc_client_;

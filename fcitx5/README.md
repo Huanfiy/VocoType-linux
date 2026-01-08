@@ -4,11 +4,11 @@ VoCoType 离线语音输入法的 Fcitx 5 版本实现。
 
 ## 功能特性
 
-🎤 **语音输入** - 按住 F9 说话，松开自动识别并输入
-⌨️ **Rime 拼音** - 完整的 Rime 拼音输入支持
-🔒 **完全离线** - 所有识别在本地完成，零网络依赖
-🚀 **轻量高效** - 纯 CPU 推理，仅需 700MB 内存
-⚡ **快速响应** - 0.1 秒级识别速度
+- **语音输入** - 按住 F9 说话，松开自动识别并输入
+- **Rime 拼音** - 完整的 Rime 拼音输入支持
+- **完全离线** - 所有识别在本地完成，零网络依赖
+- **轻量高效** - 纯 CPU 推理，仅需 700MB 内存
+- **快速响应** - 0.1 秒级识别速度
 
 ## 架构设计
 
@@ -42,7 +42,7 @@ Python Backend (fcitx5/backend/)
 ### 可选依赖（推荐）
 
 - **pyrime** - Rime 拼音输入支持（完整版）
-- **ibus-rime** - 共享 Rime 配置（如果已安装）
+- **fcitx5-rime** - 共享 Rime 配置（如果已安装）
 - **rime-ice** - 现代词库和配置方案
 
 ## 安装
@@ -55,12 +55,12 @@ bash fcitx5/scripts/install-fcitx5.sh
 ```
 
 安装脚本会自动完成：
-1. ✅ 检查 Fcitx 5 和编译依赖
-2. 🔧 编译 C++ Addon
-3. 📦 安装 Python 后端
-4. 🐍 配置 Python 虚拟环境
-5. 🎙️ 配置音频设备（可选）
-6. ⚙️ 创建 systemd 服务
+1. 检查 Fcitx 5 和编译依赖
+2. 编译 C++ Addon
+3. 安装 Python 后端
+4. 配置 Python 虚拟环境
+5. 配置音频设备（可选）
+6. 创建 systemd 服务
 
 ### 手动安装
 
@@ -156,16 +156,16 @@ fcitx5 -r
 
 ## Rime 配置
 
-VoCoType Fcitx 5 版本与 IBus 版本**共享 Rime 配置目录**：
+VoCoType Fcitx 5 版本使用**独立的 Rime 配置目录**：
 
 ```
-~/.config/ibus/rime/
+~/.local/share/fcitx5/rime/
 ```
 
 这意味着：
-- ✅ 如果您已在使用 ibus-rime，VoCoType 会自动继承您的配置
-- ✅ 推荐使用 [rime-ice（雾凇拼音）](https://github.com/iDvel/rime-ice) 获得更好体验
-- ✅ 所有 Rime 自定义配置都适用
+- 与 fcitx5-rime 共享配置目录
+- 推荐使用 [rime-ice（雾凇拼音）](https://github.com/iDvel/rime-ice) 获得更好体验
+- 所有 Rime 自定义配置都适用
 
 详见：[RIME_CONFIG_GUIDE.md](../RIME_CONFIG_GUIDE.md)
 
@@ -251,7 +251,7 @@ VoCoType Fcitx 5 版本与 IBus 版本**共享 Rime 配置目录**：
 |-----|----------|-------------|
 | 输入法框架 | IBus | Fcitx 5 |
 | 实现语言 | 纯 Python | C++ + Python (IPC) |
-| Rime 配置 | `~/.config/ibus/rime/` | 共享同一目录 |
+| Rime 配置 | `~/.config/ibus/rime/` | `~/.local/share/fcitx5/rime/` |
 | 安装位置 | `~/.local/share/vocotype/` | `~/.local/share/vocotype-fcitx5/` |
 | 后台服务 | 集成在引擎内 | 独立 Python 进程 |
 
@@ -280,11 +280,13 @@ fcitx5 -r
 
 ### 代码复用
 
-Fcitx 5 版本大量复用 IBus 版本的代码：
+IBus 和 Fcitx 5 版本是**并列独立**的实现，共享 VoCoType 核心：
 
-- **语音识别**: 100% 复用 `app/funasr_server.py`
-- **Rime 集成**: 90% 复用 `ibus/engine.py` 的 Rime 逻辑
-- **音频采集**: 80% 复用录音逻辑
+- **语音识别**: 共享 `app/funasr_server.py` 核心引擎
+- **Rime 集成**: 各自独立实现
+  - IBus 版本: `ibus/engine.py` + ibus-rime 配置
+  - Fcitx 5 版本: `fcitx5/backend/rime_handler.py` + fcitx5-rime 配置
+- **音频采集**: 共享录音逻辑
 
 ### IPC 协议
 
@@ -342,6 +344,6 @@ echo '{"type":"key_event","keyval":97,"mask":0}' | nc -U /tmp/vocotype-fcitx5.so
 ---
 
 **相关文档**:
-- [IBus 版本 README](../readme.md)
+- [项目主页](../readme.md)
+- [IBus 版本](../ibus/README.md)
 - [Rime 配置指南](../RIME_CONFIG_GUIDE.md)
-- [实现计划](../.claude/plans/fcitx5-with-rime-integration.md)

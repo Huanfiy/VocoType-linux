@@ -141,8 +141,8 @@ void VoCoTypeAddon::keyEvent(const fcitx::InputMethodEntry& entry,
 
     // 其他键：转发给 Rime
     if (!is_release) {
-        // 跳过 IBus 切换热键
-        if (isIBusSwitchHotkey(key)) {
+        // 跳过输入法切换热键
+        if (isIMSwitchHotkey(key)) {
             return;
         }
 
@@ -438,7 +438,7 @@ void VoCoTypeAddon::showError(fcitx::InputContext* ic, const std::string& error)
     // 2 秒自动清除在 Fcitx5 中需要更复杂的实现
 }
 
-bool VoCoTypeAddon::isIBusSwitchHotkey(const fcitx::Key& key) const {
+bool VoCoTypeAddon::isIMSwitchHotkey(const fcitx::Key& key) const {
     // Ctrl+Space 或 Super+Space
     if (key.sym() == FcitxKey_space) {
         if (key.states() & fcitx::KeyState::Ctrl) {

@@ -1,0 +1,1 @@
+../fcitx5/scripts/install-fcitx5.sh
