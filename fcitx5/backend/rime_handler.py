@@ -19,8 +19,12 @@ logger = logging.getLogger(__name__)
 class RimeHandler:
     """Rime 按键处理器"""
 
+    DEFAULT_RIME_SCHEMA = "luna_pinyin"
+
     def __init__(self):
         self.session: Optional[RimeSession] = None
+        self._api = None
+        self._session_id = None
         self.available = self._check_rime_available()
         self._init_lock = threading.Lock()
 
@@ -37,6 +41,82 @@ class RimeHandler:
         except ImportError:
             logger.info("pyrime 未安装，Rime 集成功能将被禁用")
             return False
+
+    def _read_schema_from_yaml(self, user_yaml: Path) -> Optional[str]:
+        """从指定 user.yaml 读取用户偏好方案"""
+        if not user_yaml.exists():
+            return None
+
+        try:
+            import yaml
+            with open(user_yaml, "r", encoding="utf-8") as f:
+                data = yaml.safe_load(f)
+            if data:
+                if "var" in data and isinstance(data["var"], dict):
+                    schema = data["var"].get("previously_selected_schema")
+                    if schema:
+                        return schema
+                schema = data.get("selected_schema")
+                if schema:
+                    return schema
+        except ImportError:
+            import re
+            try:
+                content = user_yaml.read_text(encoding="utf-8")
+                for pattern in [
+                    r"previously_selected_schema:\s*(\S+)",
+                    r"selected_schema:\s*(\S+)",
+                ]:
+                    match = re.search(pattern, content)
+                    if match:
+                        return match.group(1)
+            except Exception:
+                pass
+        except Exception as exc:
+            logger.warning("读取 user.yaml 失败: %s", exc)
+
+        return None
+
+    def _get_preferred_rime_schema(self, user_data_dir: Path) -> Optional[str]:
+        """优先读取 vocotype 的 user.yaml，失败再回退 user_data_dir"""
+        vocotype_yaml = Path.home() / ".config" / "vocotype" / "rime" / "user.yaml"
+        preferred = self._read_schema_from_yaml(vocotype_yaml)
+        if preferred:
+            return preferred
+        return self._read_schema_from_yaml(user_data_dir / "user.yaml")
+
+    def _read_installation_metadata(self, user_data_dir: Path) -> dict:
+        """读取 Rime installation.yaml 中的 distribution 信息"""
+        install_file = user_data_dir / "installation.yaml"
+        if not install_file.exists():
+            return {}
+
+        try:
+            import yaml
+            data = yaml.safe_load(install_file.read_text(encoding="utf-8"))
+            if isinstance(data, dict):
+                return {
+                    "distribution_name": data.get("distribution_name"),
+                    "distribution_code_name": data.get("distribution_code_name"),
+                    "distribution_version": data.get("distribution_version"),
+                }
+        except ImportError:
+            result = {}
+            for line in install_file.read_text(encoding="utf-8").splitlines():
+                if ":" not in line:
+                    continue
+                key, value = line.split(":", 1)
+                key = key.strip()
+                if key in {
+                    "distribution_name",
+                    "distribution_code_name",
+                    "distribution_version",
+                }:
+                    result[key] = value.strip().strip('"').strip("'")
+            return result
+        except Exception as exc:
+            logger.warning("读取 installation.yaml 失败: %s", exc)
+        return {}
 
     def initialize(self) -> bool:
         """初始化 Rime Session（懒加载）
@@ -62,9 +142,22 @@ class RimeHandler:
                 from pyrime.api import Traits, API
                 from pyrime.session import Session
 
-                # 使用 fcitx5-rime 的原生用户数据目录
-                user_data_dir = Path.home() / ".local" / "share" / "fcitx5" / "rime"
-                if not user_data_dir.exists():
+                # 按优先级选择用户目录
+                # 1. 优先使用有 default.yaml 的 fcitx5 用户目录
+                # 2. 其次使用有 default.yaml 的 vocotype 目录
+                # 3. 否则使用 fcitx5 目录（如果存在）
+                # 4. 最后使用 vocotype 目录
+                vocotype_user_dir = Path.home() / ".config" / "vocotype" / "rime"
+                fcitx5_user_dir = Path.home() / ".local" / "share" / "fcitx5" / "rime"
+
+                if (fcitx5_user_dir / "default.yaml").exists():
+                    user_data_dir = fcitx5_user_dir
+                elif (vocotype_user_dir / "default.yaml").exists():
+                    user_data_dir = vocotype_user_dir
+                elif fcitx5_user_dir.exists():
+                    user_data_dir = fcitx5_user_dir
+                else:
+                    user_data_dir = vocotype_user_dir
                     user_data_dir.mkdir(parents=True, exist_ok=True)
 
                 # 查找共享数据目录
@@ -77,30 +170,96 @@ class RimeHandler:
                     logger.error("找不到 Rime 共享数据目录")
                     return False
 
+                # 验证至少有一个 default.yaml 可用（用户或系统）
+                if not (user_data_dir / "default.yaml").exists() and \
+                   not (shared_data_dir / "default.yaml").exists():
+                    logger.error("找不到 Rime 配置文件（用户和系统目录都缺少 default.yaml）")
+                    return False
+
+                # 仅在使用 vocotype 目录时创建符号链接
+                if user_data_dir == vocotype_user_dir:
+                    for subdir in ["build", "lua", "cn_dicts", "en_dicts", "opencc", "others"]:
+                        link_path = user_data_dir / subdir
+                        if link_path.exists() or link_path.is_symlink():
+                            continue
+                        target_path = fcitx5_user_dir / subdir
+                        if not target_path.exists():
+                            target_path = shared_data_dir / subdir
+                        if target_path.exists():
+                            try:
+                                link_path.symlink_to(target_path)
+                                logger.debug("创建 %s 符号链接: %s -> %s", subdir, link_path, target_path)
+                            except OSError as exc:
+                                logger.warning("创建 %s 符号链接失败: %s", subdir, exc)
+
+                install_meta = self._read_installation_metadata(user_data_dir)
+                distribution_name = install_meta.get("distribution_name") or "VoCoType-Fcitx5"
+                distribution_code = install_meta.get("distribution_code_name") or "vocotype-fcitx5"
+                distribution_version = install_meta.get("distribution_version") or "1.0"
+                app_name = "rime.fcitx5" if distribution_code == "fcitx-rime" else "rime.vocotype.fcitx5"
+
                 traits = Traits(
                     shared_data_dir=str(shared_data_dir),
                     user_data_dir=str(user_data_dir),
                     log_dir=str(log_dir),
-                    distribution_name="VoCoType-Fcitx5",
-                    distribution_code_name="vocotype-fcitx5",
-                    distribution_version="1.0",
-                    app_name="rime.vocotype.fcitx5",
+                    distribution_name=distribution_name,
+                    distribution_code_name=distribution_code,
+                    distribution_version=distribution_version,
+                    app_name=app_name,
                 )
 
+                logger.info("Rime traits: shared=%s, user=%s, log=%s",
+                           shared_data_dir, user_data_dir, log_dir)
+                if install_meta:
+                    logger.info("Rime installation metadata: %s", install_meta)
+
                 api = API()
-                self.session = Session(traits=traits, api=api)
+                logger.info("Rime API 创建 (addr=%s)，初始化中...", api.address)
+                api.setup(traits)
+                api.initialize(traits)
+                session_id = api.create_session()
+                self._api = api
+                self._session_id = session_id
+                self.session = Session(traits=traits, api=api, id=session_id)
 
-                # 选择已部署的 schema（pyrime 默认加载 .default）
-                schema = self.session.get_current_schema()
-                if schema in (None, "", ".default"):
-                    schema_list = self.session.get_schema_list()
-                    if schema_list:
-                        first_schema = schema_list[0].schema_id
-                        logger.info("选择 schema: %s", first_schema)
-                        self.session.select_schema(first_schema)
+                # 选择已部署的 schema（避免 get_schema_list 触发潜在崩溃）
+                try:
+                    schema = self.session.get_current_schema()
+                    if isinstance(schema, bytes):
+                        try:
+                            schema = schema.decode("utf-8")
+                        except UnicodeDecodeError:
+                            schema = schema.decode("gbk", errors="ignore")
+                    logger.info("Rime Session 已创建，schema: %s", schema)
+                except Exception as exc:
+                    logger.warning("获取当前schema失败: %s，使用默认值", exc)
+                    schema = None
 
-                logger.info("Rime Session 已创建，schema: %s",
-                          self.session.get_current_schema())
+                preferred_schema = self._get_preferred_rime_schema(user_data_dir)
+                if preferred_schema:
+                    try:
+                        logger.info("尝试使用用户配置的方案: %s", preferred_schema)
+                        self.session.select_schema(preferred_schema)
+                    except Exception as exc:
+                        logger.warning("选择用户方案失败: %s", exc)
+                elif schema in (None, "", ".default"):
+                    try:
+                        logger.info("使用默认方案: %s", self.DEFAULT_RIME_SCHEMA)
+                        self.session.select_schema(self.DEFAULT_RIME_SCHEMA)
+                    except Exception as exc:
+                        logger.warning("选择默认方案失败: %s", exc)
+
+                try:
+                    logger.info("当前 schema: %s", self.session.get_current_schema())
+                except Exception:
+                    pass
+
+                try:
+                    if hasattr(self.session, "set_option"):
+                        self.session.set_option("ascii_mode", False)
+                        logger.info("已关闭 ascii_mode")
+                except Exception as exc:
+                    logger.warning("设置 ascii_mode 失败: %s", exc)
                 return True
 
             except Exception as exc:
@@ -178,6 +337,14 @@ class RimeHandler:
                     result["highlighted_index"] = menu.highlighted_candidate_index
                     result["page_size"] = menu.page_size
 
+            logger.info(
+                "Rime 状态: handled=%s, preedit=%s, candidates=%s, commit=%s",
+                handled,
+                bool(result.get("preedit")),
+                len(result.get("candidates", [])),
+                bool(result.get("commit")),
+            )
+
             return result
 
         except Exception as exc:
@@ -199,8 +366,11 @@ class RimeHandler:
         """清理资源"""
         if self.session:
             try:
-                # pyrime Session 会自动清理，无需手动释放
+                if self._api and self._session_id is not None:
+                    self._api.destroy_session(self._session_id)
                 self.session = None
+                self._api = None
+                self._session_id = None
                 logger.info("Rime Handler 已清理")
             except Exception as exc:
                 logger.warning("清理 Rime Handler 失败: %s", exc)

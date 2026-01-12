@@ -20,22 +20,40 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
+from app.config import DEFAULT_CONFIG, ensure_logging_dir, load_config
 from app.funasr_server import FunASRServer
+from app.logging_config import setup_logging
 from backend.rime_handler import RimeHandler
 
-# 配置日志
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.StreamHandler(sys.stderr),
-    ]
-)
 logger = logging.getLogger(__name__)
 
 SOCKET_PATH = "/tmp/vocotype-fcitx5.sock"
 MAX_REQUEST_BYTES = 1024 * 1024
 REQUEST_TIMEOUT_S = 2.0
+DEFAULT_CONFIG_PATH = "~/.config/vocotype/fcitx5-backend.json"
+
+
+def load_backend_config() -> tuple[dict, str]:
+    """Load backend config from user config file if present."""
+    config_path = os.environ.get("VOCOTYPE_FCITX5_CONFIG", DEFAULT_CONFIG_PATH)
+    expanded_path = os.path.expanduser(config_path)
+    if not os.path.exists(expanded_path):
+        return dict(DEFAULT_CONFIG), expanded_path
+
+    try:
+        return load_config(expanded_path), expanded_path
+    except Exception as exc:
+        print(f"Failed to load config {expanded_path}: {exc}", file=sys.stderr)
+        return dict(DEFAULT_CONFIG), expanded_path
+
+
+def configure_logging(config: dict, debug: bool) -> None:
+    """Configure logging with optional file output."""
+    logging_cfg = config.get("logging", {})
+    level = "DEBUG" if debug else logging_cfg.get("level", "INFO")
+    write_file = bool(logging_cfg.get("file", False))
+    log_dir = ensure_logging_dir(config) if write_file else None
+    setup_logging(level=level, log_dir=log_dir)
 
 
 class Fcitx5Backend:
@@ -284,8 +302,9 @@ def main():
     )
     args = parser.parse_args()
 
-    if args.debug:
-        logging.getLogger().setLevel(logging.DEBUG)
+    config, config_path = load_backend_config()
+    configure_logging(config, args.debug)
+    logger.info("配置文件路径: %s", config_path)
 
     SOCKET_PATH = args.socket
 

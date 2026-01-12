@@ -634,9 +634,21 @@ ASR 模型目录缺少 model.onnx
 
 **默认位置**：
 - IBus版本：`~/.local/share/vocotype/ibus.log`
-- Fcitx 5版本：`~/.local/share/vocotype-fcitx5/logs/`
+- Fcitx 5版本：默认仅输出到 stderr；启用文件日志后写入 `~/.local/share/vocotype-fcitx5/logs/`
 
-**自定义位置**：
+**Fcitx 5 启用文件日志**：
+在 `~/.config/vocotype/fcitx5-backend.json` 添加：
+```json
+{
+  "logging": {
+    "file": true,
+    "dir": "logs",
+    "level": "INFO"
+  }
+}
+```
+
+**自定义位置（IBus）**：
 ```bash
 export VOCOTYPE_LOG_FILE="/path/to/custom.log"
 ```

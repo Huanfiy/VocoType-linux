@@ -51,7 +51,7 @@ echo ""
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # 1. 检查 Fcitx 5
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-echo "[1/8] 检查 Fcitx 5..."
+echo "[1/9] 检查 Fcitx 5..."
 if ! command -v fcitx5 &>/dev/null; then
     echo "错误: 未检测到 Fcitx 5"
     echo "请先安装 Fcitx 5:"
@@ -66,7 +66,7 @@ echo "✓ Fcitx 5 已安装"
 # 2. 检查编译依赖
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 echo ""
-echo "[2/8] 检查编译依赖..."
+echo "[2/9] 检查编译依赖..."
 missing_deps=()
 
 # 检查 CMake
@@ -142,7 +142,7 @@ echo "✓ 编译依赖已满足"
 # 3. 编译 C++ Addon
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 echo ""
-echo "[3/8] 编译 C++ Addon..."
+echo "[3/9] 编译 C++ Addon..."
 mkdir -p "$PROJECT_DIR/fcitx5/addon/build"
 cd "$PROJECT_DIR/fcitx5/addon/build"
 
@@ -154,7 +154,7 @@ echo "✓ 编译成功"
 # 4. 安装 C++ Addon（多位置 + 符号链接）
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 echo ""
-echo "[4/8] 安装 C++ Addon..."
+echo "[4/9] 安装 C++ Addon..."
 make install
 
 # 复制到 lib 目录（某些 Fcitx5 配置可能需要）
@@ -182,7 +182,7 @@ echo "✓ C++ Addon 已安装"
 # 5. 设置环境变量（关键：让 Fcitx5 找到用户插件）
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 echo ""
-echo "[5/8] 配置环境变量..."
+echo "[5/9] 配置环境变量..."
 mkdir -p "$HOME/.config/environment.d"
 cat > "$HOME/.config/environment.d/fcitx5-vocotype.conf" << 'EOF'
 FCITX_ADDON_DIRS=$HOME/.local/lib64/fcitx5:$HOME/.local/lib/fcitx5:/usr/lib64/fcitx5:/usr/lib/fcitx5
@@ -194,7 +194,7 @@ echo "  注意: 需要重新登录或设置环境变量才能生效"
 # 6. 安装 Python 后端
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 echo ""
-echo "[6/8] 安装 Python 后端..."
+echo "[6/9] 安装 Python 后端..."
 mkdir -p "$INSTALL_DIR"
 
 # 复制文件
@@ -211,7 +211,7 @@ echo "✓ Python 后端已安装"
 # 7. 配置 Python 环境
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 echo ""
-echo "[7/8] 配置 Python 环境..."
+echo "[7/9] 配置 Python 环境..."
 
 # 检测可用的 Python 版本（需要 3.10-3.12，onnxruntime 不支持 3.13+）
 PYTHON_CMD=""
@@ -271,10 +271,190 @@ fi
 echo "✓ Python 环境已配置"
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-# 8. 音频设备配置和 ASR 验收
+# 8. Rime 输入方案选择（可选）
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 echo ""
-echo "[8/8] 音频设备配置..."
+echo "[8/9] 配置 Rime 输入方案（可选）"
+
+FCITX_RIME_USER="$HOME/.local/share/fcitx5/rime"
+FCITX_RIME_BUILD="$FCITX_RIME_USER/build"
+VOCOTYPE_RIME_CONFIG="$HOME/.config/vocotype/rime"
+
+if [ -d "$FCITX_RIME_USER" ]; then
+    if [ ! -f "/usr/share/rime-data/default.yaml" ] && [ ! -f "/usr/local/share/rime-data/default.yaml" ]; then
+        echo "⚠️  未找到系统 Rime 配置文件，跳过方案选择"
+        echo "   Arch: sudo pacman -S rime-data"
+    else
+        echo ""
+        echo "══════════════════════════════════════════"
+        echo "   RIME 输入方案配置"
+        echo "══════════════════════════════════════════"
+        echo ""
+
+        declare -a SCHEMAS=()
+        declare -A SCHEMA_NAMES=()
+
+        SCHEMA_NAMES["luna_pinyin"]="朙月拼音"
+        SCHEMA_NAMES["luna_pinyin_simp"]="朙月拼音·简化字"
+        SCHEMA_NAMES["luna_pinyin_tw"]="朙月拼音·臺灣正體"
+        SCHEMA_NAMES["double_pinyin"]="自然码双拼"
+        SCHEMA_NAMES["double_pinyin_abc"]="智能ABC双拼"
+        SCHEMA_NAMES["double_pinyin_flypy"]="小鹤双拼"
+        SCHEMA_NAMES["double_pinyin_mspy"]="微软双拼"
+        SCHEMA_NAMES["double_pinyin_pyjj"]="拼音加加双拼"
+        SCHEMA_NAMES["rime_ice"]="雾凇拼音"
+        SCHEMA_NAMES["wubi86"]="五笔86"
+        SCHEMA_NAMES["wubi98"]="五笔98"
+        SCHEMA_NAMES["wubi_pinyin"]="五笔拼音混输"
+        SCHEMA_NAMES["pinyin_simp"]="袖珍简化字拼音"
+        SCHEMA_NAMES["terra_pinyin"]="地球拼音"
+        SCHEMA_NAMES["bopomofo"]="注音"
+        SCHEMA_NAMES["bopomofo_tw"]="注音·臺灣正體"
+        SCHEMA_NAMES["bopomofo_express"]="注音·快打"
+        SCHEMA_NAMES["cangjie5"]="仓颉五代"
+        SCHEMA_NAMES["cangjie5_express"]="仓颉五代·快打"
+        SCHEMA_NAMES["quick5"]="速成"
+        SCHEMA_NAMES["stroke"]="五笔画"
+        SCHEMA_NAMES["array30"]="行列30"
+        SCHEMA_NAMES["combo_pinyin"]="宫保拼音"
+        SCHEMA_NAMES["combo_pinyin_kbcon"]="宫保拼音·键盘控"
+        SCHEMA_NAMES["combo_pinyin_left"]="宫保拼音·左手"
+        SCHEMA_NAMES["stenotype"]="打字速记"
+        SCHEMA_NAMES["jyutping"]="粤拼"
+        SCHEMA_NAMES["ipa_xsampa"]="国际音标"
+        SCHEMA_NAMES["emoji"]="绘文字"
+        SCHEMA_NAMES["stroke_simp"]="笔顺·简化字"
+        SCHEMA_NAMES["triungkox"]="中古汉语三拼"
+
+        if [ -d "$FCITX_RIME_BUILD" ]; then
+            for f in "$FCITX_RIME_BUILD"/*.prism.bin; do
+                if [ -f "$f" ]; then
+                    schema_id=$(basename "$f" .prism.bin)
+                    SCHEMAS+=("$schema_id")
+                fi
+            done
+        fi
+
+        if [ ${#SCHEMAS[@]} -eq 0 ]; then
+            echo "⚠️  未检测到已部署的 Rime 输入方案"
+            echo ""
+            echo "请先运行 fcitx5-rime 完成 Rime 部署："
+            echo "  1. 添加 fcitx5-rime 输入法"
+            echo "  2. 切换到 fcitx5-rime 并使用一次"
+            echo "  3. Rime 会自动部署输入方案"
+            echo "  4. 然后重新运行本安装脚本"
+        else
+            echo "检测到 ${#SCHEMAS[@]} 个已部署的输入方案"
+            echo ""
+
+            MENU_SCHEMAS=()
+            if [[ " ${SCHEMAS[*]} " =~ " luna_pinyin " ]]; then
+                MENU_SCHEMAS+=("luna_pinyin")
+            fi
+            for s in "${SCHEMAS[@]}"; do
+                if [ "$s" != "luna_pinyin" ]; then
+                    MENU_SCHEMAS+=("$s")
+                fi
+            done
+
+            PAGE_SIZE=10
+            TOTAL=${#MENU_SCHEMAS[@]}
+            PAGE=0
+            TOTAL_PAGES=$(( (TOTAL + PAGE_SIZE - 1) / PAGE_SIZE ))
+
+            while true; do
+                echo "检测到以下可用输入方案（第 $((PAGE + 1))/$TOTAL_PAGES 页，共 $TOTAL 个）："
+                echo ""
+
+                START=$((PAGE * PAGE_SIZE))
+                END=$((START + PAGE_SIZE))
+                if [ $END -gt $TOTAL ]; then
+                    END=$TOTAL
+                fi
+
+                for ((i = START; i < END; i++)); do
+                    s="${MENU_SCHEMAS[$i]}"
+                    display_num=$((i + 1))
+                    name="${SCHEMA_NAMES[$s]:-$s}"
+                    if [ "$s" = "luna_pinyin" ]; then
+                        echo "  [$display_num] $s - $name（推荐，librime 自带）"
+                    else
+                        echo "  [$display_num] $s - $name"
+                    fi
+                done
+
+                echo ""
+                if [ $TOTAL_PAGES -gt 1 ]; then
+                    echo "  [n] 下一页  [p] 上一页"
+                fi
+                echo "  [0] 使用默认 luna_pinyin"
+                echo ""
+
+                read -r -p "请输入方案编号 (默认 1): " SCHEMA_CHOICE
+
+                if [ "$SCHEMA_CHOICE" = "n" ] || [ "$SCHEMA_CHOICE" = "N" ]; then
+                    if [ $((PAGE + 1)) -lt $TOTAL_PAGES ]; then
+                        PAGE=$((PAGE + 1))
+                        echo ""
+                        continue
+                    else
+                        echo "已是最后一页"
+                        echo ""
+                        continue
+                    fi
+                elif [ "$SCHEMA_CHOICE" = "p" ] || [ "$SCHEMA_CHOICE" = "P" ]; then
+                    if [ $PAGE -gt 0 ]; then
+                        PAGE=$((PAGE - 1))
+                        echo ""
+                        continue
+                    else
+                        echo "已是第一页"
+                        echo ""
+                        continue
+                    fi
+                fi
+
+                if [ -z "$SCHEMA_CHOICE" ] || [ "$SCHEMA_CHOICE" = "1" ]; then
+                    SELECTED_SCHEMA="${MENU_SCHEMAS[0]}"
+                    break
+                elif [ "$SCHEMA_CHOICE" = "0" ]; then
+                    SELECTED_SCHEMA="luna_pinyin"
+                    break
+                elif [[ "$SCHEMA_CHOICE" =~ ^[0-9]+$ ]] && [ "$SCHEMA_CHOICE" -ge 1 ] && [ "$SCHEMA_CHOICE" -le $TOTAL ]; then
+                    idx=$((SCHEMA_CHOICE - 1))
+                    SELECTED_SCHEMA="${MENU_SCHEMAS[$idx]}"
+                    break
+                else
+                    echo "无效选择，请重新输入"
+                    echo ""
+                    continue
+                fi
+            done
+
+            mkdir -p "$VOCOTYPE_RIME_CONFIG"
+            cat > "$VOCOTYPE_RIME_CONFIG/user.yaml" << EOF
+# VoCoType RIME 用户配置
+# 如需更换输入方案，请修改下面的 previously_selected_schema 值
+var:
+  previously_selected_schema: "$SELECTED_SCHEMA"
+EOF
+
+            echo ""
+            echo "✓ 已选择输入方案: $SELECTED_SCHEMA"
+            echo "  配置文件: $VOCOTYPE_RIME_CONFIG/user.yaml"
+            echo "══════════════════════════════════════════"
+        fi
+    fi
+else
+    echo "⚠️  未找到 Fcitx5 Rime 目录：$FCITX_RIME_USER"
+    echo "   请先安装并启用 fcitx5-rime，然后重新运行安装脚本"
+fi
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# 9. 音频设备配置和 ASR 验收
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+echo ""
+echo "[9/9] 音频设备配置..."
 
 if [ -n "$AUDIO_DEVICE" ]; then
     # 使用命令行指定的设备，直接写入配置
@@ -359,6 +539,11 @@ Environment="PYTHONIOENCODING=UTF-8"
 WantedBy=default.target
 EOF
 
+if command -v systemctl >/dev/null 2>&1; then
+    systemctl --user daemon-reload >/dev/null 2>&1 || \
+        echo "⚠️  systemctl --user daemon-reload 失败，请手动执行"
+fi
+
 echo "✓ 后台服务启动器已创建"
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -381,6 +566,7 @@ echo "     export FCITX_ADDON_DIRS=~/.local/lib64/fcitx5:~/.local/lib/fcitx5:/us
 echo ""
 echo "2. 启动后台服务："
 echo ""
+echo "   systemctl --user daemon-reload"
 echo "   systemctl --user enable --now vocotype-fcitx5-backend.service"
 echo ""
 echo "3. 重启 Fcitx 5："

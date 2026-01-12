@@ -130,6 +130,23 @@ systemctl --user status vocotype-fcitx5-backend.service
 journalctl --user -u vocotype-fcitx5-backend.service -f
 ```
 
+### 日志（可选）
+
+默认只输出到 stderr，不会生成日志文件。需要文件日志时，在
+`~/.config/vocotype/fcitx5-backend.json` 添加：
+
+```json
+{
+  "logging": {
+    "file": true,
+    "dir": "logs",
+    "level": "INFO"
+  }
+}
+```
+
+日志目录默认是 `~/.local/share/vocotype-fcitx5/logs/`。
+
 ### 2. 重启 Fcitx 5
 
 ```bash
@@ -166,6 +183,7 @@ VoCoType Fcitx 5 版本使用**独立的 Rime 配置目录**：
 - 与 fcitx5-rime 共享配置目录
 - 推荐使用 [rime-ice（雾凇拼音）](https://github.com/iDvel/rime-ice) 获得更好体验
 - 所有 Rime 自定义配置都适用
+- 安装脚本选择的方案会记录在 `~/.config/vocotype/rime/user.yaml`
 
 详见：[RIME_CONFIG_GUIDE.md](../RIME_CONFIG_GUIDE.md)
 
