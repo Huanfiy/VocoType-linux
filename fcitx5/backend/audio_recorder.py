@@ -36,8 +36,8 @@ logger = logging.getLogger(__name__)
 class AudioRecorder:
     """音频录制器"""
 
-    def __init__(self, device_id: int | None, sample_rate: int):
-        self.device_id = device_id
+    def __init__(self, device: int | str | None, sample_rate: int):
+        self.device = device
         self.sample_rate = sample_rate
         self.audio_frames = []
         self.audio_queue = queue.Queue(maxsize=500)
@@ -46,14 +46,14 @@ class AudioRecorder:
 
     def _resolve_input_device(self):
         """选择可用的输入设备"""
-        if self.device_id is not None:
+        if self.device is not None:
             try:
-                info = sd.query_devices(self.device_id)
+                info = sd.query_devices(self.device)
                 if info.get("max_input_channels", 0) > 0:
-                    return self.device_id
-                logger.warning("设备 %s 无输入通道，回退选择输入设备", self.device_id)
+                    return self.device
+                logger.warning("设备 %s 无输入通道，回退选择输入设备", self.device)
             except Exception as exc:
-                logger.warning("查询设备 %s 失败: %s", self.device_id, exc)
+                logger.warning("查询设备 %s 失败: %s", self.device, exc)
 
         try:
             devices = sd.query_devices()
@@ -197,8 +197,8 @@ def main():
     )
     parser.add_argument(
         '--device',
-        type=int,
-        help='Audio device ID'
+        type=str,
+        help='Audio device name or ID'
     )
     parser.add_argument(
         '--sample-rate',
@@ -210,11 +210,13 @@ def main():
 
     # 加载配置
     configured_device, configured_sr = load_audio_config()
-    device_id = args.device if args.device is not None else configured_device
+    device = args.device if args.device is not None else configured_device
+    if isinstance(device, str) and device.isdigit():
+        device = int(device)
     sample_rate = args.sample_rate if args.sample_rate != 44100 else configured_sr
 
     # 录音
-    recorder = AudioRecorder(device_id, sample_rate)
+    recorder = AudioRecorder(device, sample_rate)
     try:
         audio_path = recorder.record(duration=args.duration)
         # 输出文件路径到 stdout（C++ Addon 会读取此路径）

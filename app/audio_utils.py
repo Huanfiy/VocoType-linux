@@ -17,11 +17,11 @@ SAMPLE_RATE = 16000
 DEFAULT_NATIVE_SAMPLE_RATE = 44100
 
 
-def load_audio_config() -> tuple[int | None, int]:
+def load_audio_config() -> tuple[int | str | None, int]:
     """从配置文件加载音频设备配置
 
     Returns:
-        (device_id, sample_rate): 设备 ID（可能为 None）和采样率
+        (device, sample_rate): 设备（可能为 None、整数 ID 或字符串名称）和采样率
     """
     config_file = Path.home() / ".config" / "vocotype" / "audio.conf"
     if not config_file.exists():
@@ -32,6 +32,13 @@ def load_audio_config() -> tuple[int | None, int]:
         import configparser
         config = configparser.ConfigParser()
         config.read(config_file)
+
+        # 优先使用 device_name（更稳定），回退到 device_id（向后兼容）
+        device_name = config.get('audio', 'device_name', fallback=None)
+        if device_name:
+            sample_rate = config.getint('audio', 'sample_rate', fallback=DEFAULT_NATIVE_SAMPLE_RATE)
+            logger.info("从配置加载: 设备=%s, 采样率=%d", device_name, sample_rate)
+            return device_name, sample_rate
 
         device_id = config.getint('audio', 'device_id', fallback=None)
         sample_rate = config.getint('audio', 'sample_rate', fallback=DEFAULT_NATIVE_SAMPLE_RATE)

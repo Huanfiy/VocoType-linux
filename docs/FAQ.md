@@ -767,6 +767,15 @@ grep -E "ERROR|Failed" ~/.local/share/vocotype/ibus.log
    mkdir -p ~/.config/vocotype/
    ```
 
+**提示**：
+`~/.config/vocotype/audio.conf` 现在支持 `device_name`，用于避免设备编号变化带来的失效：
+```ini
+[audio]
+device_name = USB Composite Device
+sample_rate = 48000
+```
+如果仍使用旧的 `device_id`，也会兼容读取。
+
 ---
 
 ## 获取帮助

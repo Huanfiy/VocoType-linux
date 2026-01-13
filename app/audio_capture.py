@@ -25,7 +25,7 @@ class AudioCapture:
         self,
         sample_rate: int,
         block_ms: int,
-        device: Optional[str] = None,
+        device: int | str | None = None,
         queue_size: int = 200,
     ) -> None:
         self.sample_rate = sample_rate
@@ -85,7 +85,7 @@ class AudioCapture:
             except queue.Empty:
                 break
 
-    def _create_stream(self, device: Optional[str]) -> sd.RawInputStream:
+    def _create_stream(self, device: int | str | None) -> sd.RawInputStream:
         try:
             return sd.RawInputStream(
                 samplerate=self.sample_rate,

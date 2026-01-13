@@ -61,8 +61,8 @@ def display_devices(devices: list[tuple[int, dict]]) -> None:
         print()
 
 
-def select_device(devices: list[tuple[int, dict]]) -> tuple[int, int] | None:
-    """让用户选择设备，返回 (设备ID, 采样率) 或 None 表示退出"""
+def select_device(devices: list[tuple[int, dict]]) -> tuple[str, int] | None:
+    """让用户选择设备，返回 (设备名称, 采样率) 或 None 表示退出"""
     while True:
         try:
             choice = input("请输入设备编号 (q=退出): ").strip().lower()
@@ -76,8 +76,9 @@ def select_device(devices: list[tuple[int, dict]]) -> tuple[int, int] | None:
             for idx, dev in devices:
                 if idx == device_id:
                     sample_rate = int(dev['default_samplerate'])
-                    print(f"\n✓ 已选择: [{device_id}] {dev['name']} ({sample_rate}Hz)")
-                    return device_id, sample_rate
+                    device_name = dev['name']
+                    print(f"\n✓ 已选择: [{device_id}] {device_name} ({sample_rate}Hz)")
+                    return device_name, sample_rate
 
             print(f"❌ 设备 {device_id} 不是有效的输入设备，请重新选择")
         except ValueError:
@@ -87,7 +88,7 @@ def select_device(devices: list[tuple[int, dict]]) -> tuple[int, int] | None:
             sys.exit(1)
 
 
-def record_test_audio(device_id: int, sample_rate: int) -> np.ndarray:
+def record_test_audio(device_name: str, sample_rate: int) -> np.ndarray:
     """录制测试音频，返回音频数据"""
     print_header("录音测试")
     print("\n准备录音...")
@@ -124,7 +125,7 @@ def record_test_audio(device_id: int, sample_rate: int) -> np.ndarray:
     stream = sd.InputStream(
         samplerate=sample_rate,
         blocksize=block_size,
-        device=device_id,
+        device=device_name,
         channels=1,
         dtype='int16',
         callback=audio_callback,
@@ -278,12 +279,12 @@ def test_asr_recognition(audio_data: np.ndarray, sample_rate: int) -> bool:
         return False
 
 
-def save_config(device_id: int, sample_rate: int) -> None:
+def save_config(device_name: str, sample_rate: int) -> None:
     """保存音频配置到文件"""
     CONFIG_DIR.mkdir(parents=True, exist_ok=True)
 
     config_content = f"""[audio]
-device_id = {device_id}
+device_name = {device_name}
 sample_rate = {sample_rate}
 """
 
@@ -314,12 +315,12 @@ def main():
             print("\n⚠️  音频配置未完成，退出。")
             sys.exit(1)
 
-        device_id, sample_rate = result
+        device_name, sample_rate = result
 
         # 录音-播放-ASR测试循环
         while True:
             # 3. 录音测试
-            audio_data = record_test_audio(device_id, sample_rate)
+            audio_data = record_test_audio(device_name, sample_rate)
 
             if audio_data is None:
                 retry = input("\n录音失败，是否重试? (y/n/q=退出): ").strip().lower()
@@ -359,7 +360,7 @@ def main():
 
             if asr_success:
                 # 6. 保存配置
-                save_config(device_id, sample_rate)
+                save_config(device_name, sample_rate)
 
                 print("\n" + "🎉" * 20)
                 print("  配置完成！音频设备已就绪。")
