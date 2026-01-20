@@ -31,14 +31,19 @@ done
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 
-# 检测可用的 Python 版本（需要 3.10-3.12，onnxruntime 不支持 3.13+）
-detect_python() {
-    for py in python3.12 python3.11 python3.10 python3; do
+# Python 版本范围（onnxruntime 暂不支持 3.13+）
+PYTHON_MIN_MINOR=11
+PYTHON_MAX_MINOR=12
+DEFAULT_UV_PYTHON="3.12"
+
+# 检测系统可用的 Python 版本（需要 3.11-3.12）
+detect_system_python() {
+    for py in python3.12 python3.11 python3; do
         if command -v "$py" &>/dev/null; then
             py_version=$("$py" -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
             major=$(echo "$py_version" | cut -d. -f1)
             minor=$(echo "$py_version" | cut -d. -f2)
-            if [ "$major" -eq 3 ] && [ "$minor" -ge 10 ] && [ "$minor" -le 12 ]; then
+            if [ "$major" -eq 3 ] && [ "$minor" -ge "$PYTHON_MIN_MINOR" ] && [ "$minor" -le "$PYTHON_MAX_MINOR" ]; then
                 echo "$py"
                 return 0
             fi
@@ -47,8 +52,7 @@ detect_python() {
     return 1
 }
 
-PYTHON_CMD=$(detect_python) || {
-    echo "错误: 需要 Python 3.10-3.12"
+print_python_help() {
     echo ""
     echo "原因: VoCoType 使用 onnxruntime 运行语音识别模型，"
     echo "      而 onnxruntime 官方尚未支持 Python 3.13+。"
@@ -65,9 +69,7 @@ PYTHON_CMD=$(detect_python) || {
     echo "    Ubuntu 22.04: sudo apt install python3.12 python3.12-venv"
     echo "    Debian 13:    官方源无 3.12，建议使用 uv"
     echo "    Arch:         sudo pacman -S python312"
-    exit 1
 }
-echo "检测到兼容的 Python: $PYTHON_CMD"
 
 # 检测 IBus 引擎必需的系统构建依赖（用于编译 pycairo/pygobject）
 check_build_deps() {
@@ -82,9 +84,10 @@ check_build_deps() {
         missing="$missing libcairo2-dev"
     fi
 
-    # 检测 gobject-introspection 开发库 (girepository-2.0)
-    if ! pkg-config --exists girepository-2.0 2>/dev/null; then
-        missing="$missing libgirepository-2.0-dev"
+    # 检测 gobject-introspection 开发库 (girepository-1.0/2.0)
+    if ! pkg-config --exists girepository-2.0 2>/dev/null && \
+       ! pkg-config --exists girepository-1.0 2>/dev/null; then
+        missing="$missing libgirepository1.0-dev"
     fi
 
     # 检测 PortAudio 运行时库（sounddevice 需要）
@@ -92,8 +95,8 @@ check_build_deps() {
         missing="$missing libportaudio2"
     fi
 
-    # 检测 Python 开发头文件（仅当没有 uv 时需要）
-    if ! command -v uv >/dev/null 2>&1; then
+    # 检测 Python 开发头文件（仅当使用系统 Python 或没有 uv 时需要）
+    if [ "$USE_SYSTEM_PYTHON" = "1" ] || ! command -v uv >/dev/null 2>&1; then
         py_version=$("$PYTHON_CMD" -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
         if ! pkg-config --exists "python-${py_version}-embed" 2>/dev/null && \
            ! pkg-config --exists "python-${py_version}" 2>/dev/null && \
@@ -104,34 +107,6 @@ check_build_deps() {
 
     echo "$missing"
 }
-
-if [ -f /etc/debian_version ]; then
-    MISSING_DEPS=$(check_build_deps)
-    if [ -n "$MISSING_DEPS" ]; then
-        echo ""
-        echo "⚠️  缺少编译 IBus 引擎依赖所需的系统库"
-        echo ""
-        INSTALL_CMD="sudo apt install -y$MISSING_DEPS"
-        echo "需要安装：$MISSING_DEPS"
-        echo ""
-        read -r -p "是否现在自动安装？(Y/n): " AUTO_INSTALL_DEPS
-        if [[ ! "$AUTO_INSTALL_DEPS" =~ ^[Nn]$ ]]; then
-            echo "正在安装系统依赖..."
-            if eval "$INSTALL_CMD"; then
-                echo "✓ 系统依赖安装成功"
-            else
-                echo "❌ 系统依赖安装失败"
-                echo "   请手动执行: $INSTALL_CMD"
-                exit 1
-            fi
-        else
-            echo "请先安装系统依赖："
-            echo "  $INSTALL_CMD"
-            exit 1
-        fi
-        echo ""
-    fi
-fi
 
 # 用户级安装路径
 INSTALL_DIR="$HOME/.local/share/vocotype"
@@ -239,18 +214,68 @@ echo "  [2] 使用用户级虚拟环境: $INSTALL_DIR/.venv"
 echo "  [3] 使用系统 Python（省空间，需自行安装依赖）"
 read -r -p "请输入选项 (默认 1): " PY_CHOICE
 
+USE_SYSTEM_PYTHON=0
 case "$PY_CHOICE" in
     2)
         PYTHON="$INSTALL_DIR/.venv/bin/python"
         ;;
     3)
-        PYTHON="$(command -v python3)"
         USE_SYSTEM_PYTHON=1
         ;;
     ""|1|*)
         PYTHON="$PROJECT_DIR/.venv/bin/python"
         ;;
 esac
+
+if [ "$USE_SYSTEM_PYTHON" = "1" ]; then
+    PYTHON_CMD=$(detect_system_python) || {
+        echo "错误: 需要 Python 3.11-3.12"
+        print_python_help
+        exit 1
+    }
+    PYTHON="$PYTHON_CMD"
+    echo "使用系统 Python: $PYTHON_CMD"
+else
+    if command -v uv >/dev/null 2>&1; then
+        PYTHON_CMD="$DEFAULT_UV_PYTHON"
+        echo "检测到 uv，使用 uv 管理 Python: $PYTHON_CMD"
+    else
+        PYTHON_CMD=$(detect_system_python) || {
+            echo "错误: 需要 Python 3.11-3.12"
+            print_python_help
+            exit 1
+        }
+        echo "检测到兼容的 Python: $PYTHON_CMD"
+    fi
+fi
+
+if [ -f /etc/debian_version ]; then
+    MISSING_DEPS=$(check_build_deps)
+    if [ -n "$MISSING_DEPS" ]; then
+        echo ""
+        echo "⚠️  缺少编译 IBus 引擎依赖所需的系统库"
+        echo ""
+        INSTALL_CMD="sudo apt install -y$MISSING_DEPS"
+        echo "需要安装：$MISSING_DEPS"
+        echo ""
+        read -r -p "是否现在自动安装？(Y/n): " AUTO_INSTALL_DEPS
+        if [[ ! "$AUTO_INSTALL_DEPS" =~ ^[Nn]$ ]]; then
+            echo "正在安装系统依赖..."
+            if eval "$INSTALL_CMD"; then
+                echo "✓ 系统依赖安装成功"
+            else
+                echo "❌ 系统依赖安装失败"
+                echo "   请手动执行: $INSTALL_CMD"
+                exit 1
+            fi
+        else
+            echo "请先安装系统依赖："
+            echo "  $INSTALL_CMD"
+            exit 1
+        fi
+        echo ""
+    fi
+fi
 
 # 1. 创建目录
 echo "[1/6] 创建安装目录与 Python 环境..."
@@ -625,7 +650,7 @@ fi
 # 6. 安装IBus组件文件
 echo "[6/6] 安装IBus组件配置..."
 EXEC_PATH="$LIBEXEC_DIR/ibus-engine-vocotype"
-VOCOTYPE_VERSION="1.0.0"
+VOCOTYPE_VERSION="2.1.1"
 if VOCOTYPE_VERSION=$(PYTHONPATH="$PROJECT_DIR" "$PYTHON" - << 'PY'
 from vocotype_version import __version__
 print(__version__)
@@ -633,7 +658,7 @@ PY
 ); then
     :
 else
-    VOCOTYPE_VERSION="1.0.0"
+    VOCOTYPE_VERSION="2.1.1"
 fi
 
 # GNOME 环境下 XDG_DATA_DIRS 不包含用户目录，需要安装到系统目录

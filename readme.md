@@ -143,7 +143,7 @@ IBus 和 Fcitx 5 是**并列独立**的实现，共享 VoCoType 核心（语音�
 ## 系统要求
 
 - **操作系统**: Linux (Fedora, Ubuntu, Debian, Arch 等)
-- **Python**: 3.10-3.12（onnxruntime 暂不支持 3.13+）
+- **Python**: 3.11-3.12（onnxruntime 暂不支持 3.13+）
 - **内存**: 最低 4GB，推荐 8GB
 - **CPU**: 双核以上，无需 GPU
 

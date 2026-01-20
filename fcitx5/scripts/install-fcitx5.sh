@@ -185,7 +185,7 @@ echo ""
 echo "[5/9] 配置环境变量..."
 mkdir -p "$HOME/.config/environment.d"
 cat > "$HOME/.config/environment.d/fcitx5-vocotype.conf" << 'EOF'
-FCITX_ADDON_DIRS=$HOME/.local/lib64/fcitx5:$HOME/.local/lib/fcitx5:/usr/lib64/fcitx5:/usr/lib/fcitx5
+FCITX_ADDON_DIRS=$HOME/.local/lib64/fcitx5:$HOME/.local/lib/fcitx5:/usr/lib64/fcitx5:/usr/lib/x86_64-linux-gnu/fcitx5:/usr/lib/fcitx5
 EOF
 echo "✓ 环境变量已配置"
 echo "  注意: 需要重新登录或设置环境变量才能生效"
@@ -213,32 +213,43 @@ echo "✓ Python 后端已安装"
 echo ""
 echo "[7/9] 配置 Python 环境..."
 
-# 检测可用的 Python 版本（需要 3.10-3.12，onnxruntime 不支持 3.13+）
+# 检测可用的 Python 版本（需要 3.11-3.12，onnxruntime 不支持 3.13+）
 PYTHON_CMD=""
-for py in python3.12 python3.11 python3.10 python3; do
-    if command -v "$py" &>/dev/null; then
-        py_version=$("$py" -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
-        major=$(echo "$py_version" | cut -d. -f1)
-        minor=$(echo "$py_version" | cut -d. -f2)
-        if [ "$major" -eq 3 ] && [ "$minor" -ge 10 ] && [ "$minor" -le 12 ]; then
-            PYTHON_CMD="$py"
-            echo "使用 Python $py_version"
-            break
+if command -v uv &>/dev/null; then
+    PYTHON_CMD="3.12"
+    echo "检测到 uv，使用 uv 管理 Python: $PYTHON_CMD"
+else
+    for py in python3.12 python3.11 python3; do
+        if command -v "$py" &>/dev/null; then
+            py_version=$("$py" -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
+            major=$(echo "$py_version" | cut -d. -f1)
+            minor=$(echo "$py_version" | cut -d. -f2)
+            if [ "$major" -eq 3 ] && [ "$minor" -ge 11 ] && [ "$minor" -le 12 ]; then
+                PYTHON_CMD="$py"
+                echo "使用 Python $py_version"
+                break
+            fi
         fi
-    fi
-done
+    done
+fi
 
 if [ -z "$PYTHON_CMD" ]; then
-    echo "错误: 需要 Python 3.10-3.12"
+    echo "错误: 需要 Python 3.11-3.12"
     echo ""
     echo "原因: VoCoType 使用 onnxruntime 运行语音识别模型，"
     echo "      而 onnxruntime 官方尚未支持 Python 3.13+。"
     echo "      参考: https://github.com/microsoft/onnxruntime/issues/21292"
     echo ""
-    echo "请安装 Python 3.12:"
-    echo "  Fedora: sudo dnf install python3.12"
-    echo "  Ubuntu: sudo apt install python3.12"
-    echo "  Arch:   sudo pacman -S python312"
+    echo "解决方案："
+    echo ""
+    echo "  【推荐】安装 uv（自动管理 Python 版本和虚拟环境）："
+    echo "    curl -LsSf https://astral.sh/uv/install.sh | sh"
+    echo "    然后重新打开终端，再运行本脚本"
+    echo ""
+    echo "  或手动安装 Python 3.12："
+    echo "    Fedora: sudo dnf install python3.12"
+    echo "    Ubuntu: sudo apt install python3.12"
+    echo "    Arch:   sudo pacman -S python312"
     exit 1
 fi
 

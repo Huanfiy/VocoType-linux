@@ -11,7 +11,7 @@ funasr_onnx==0.4.1
 jieba==0.42.1
 
 # IBus Python 绑定 (Linux 必需)
-PyGObject>=3.42.0
+PyGObject>=3.42.0,<3.51
 
 # 模型下载 (推荐)
 modelscope==1.30.0

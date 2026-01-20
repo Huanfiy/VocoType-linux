@@ -5,6 +5,19 @@ All notable changes to VoCoType Linux IBus will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.1] - 2026-01-20
+
+### Changed
+
+- **Python 版本**：调整为 3.11-3.12（不再支持 3.10）
+- **PyGObject 版本上限**：限制为 <3.51，避免 Ubuntu 22.04 缺少 libgirepository-2 导致安装失败
+
+### Fixed
+
+- **安装脚本**：项目/用户级虚拟环境优先使用 uv，系统 Python 仅在用户选择时才遍历
+- **Fcitx5 插件路径**：补充 `/usr/lib/x86_64-linux-gnu/fcitx5`，避免 Ubuntu 找不到 addon
+- **Debian/Ubuntu 依赖提示**：更新 girepository 包名并标注 22.04 的 librime/ibus-rime 版本问题
+
 ## [1.1.0] - 2026-01-02
 
 ### Added

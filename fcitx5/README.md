@@ -30,7 +30,7 @@ Python Backend (fcitx5/backend/)
 ### 必需依赖
 
 - **Fcitx 5** - 输入法框架
-- **Python 3.10-3.12** - 后端运行环境（onnxruntime 暂不支持 3.13+）
+- **Python 3.11-3.12** - 后端运行环境（onnxruntime 暂不支持 3.13+）
 - **编译工具**:
   - CMake 3.10+
   - C++17 编译器

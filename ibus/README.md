@@ -13,7 +13,7 @@ VoCoType 离线语音输入法的 IBus 版本实现。
 ## 系统要求
 
 - **Linux 发行版**: 支持 IBus 的任何发行版 (Fedora, Ubuntu, Debian, Arch 等)
-- **Python**: 3.10-3.12（onnxruntime 暂不支持 3.13+）
+- **Python**: 3.11-3.12（onnxruntime 暂不支持 3.13+）
 - **IBus**: 系统已安装并启用 IBus 输入法框架
 
 ### 可选依赖（完整版）

@@ -13,12 +13,12 @@
 
 ## 安装问题
 
-### Python版本必须是3.10-3.12
+### Python版本必须是3.11-3.12
 
-**重要**：VoCoType要求Python版本必须是3.10、3.11或3.12，**不支持Python 3.13及以上版本**。
+**重要**：VoCoType要求Python版本必须是3.11或3.12，**不支持Python 3.13及以上版本**。
 
 **为什么有这个限制**：
-VoCoType依赖的onnxruntime库目前只支持Python 3.10-3.12，不支持3.13+。
+VoCoType依赖的onnxruntime库目前只支持Python 3.11-3.12，不支持3.13+。
 
 **常见错误**：
 ```
@@ -71,7 +71,7 @@ source .venv/bin/activate
 ```bash
 # 激活虚拟环境后检查版本
 python --version
-# 应该显示 Python 3.10.x, 3.11.x 或 3.12.x
+# 应该显示 Python 3.11.x 或 3.12.x
 ```
 
 ---
@@ -85,7 +85,7 @@ python --version
 **Debian/Ubuntu**：
 ```bash
 sudo apt install build-essential pkg-config libcairo2-dev \
-  libgirepository-2.0-dev libportaudio2
+  libgirepository1.0-dev libportaudio2
 ```
 
 **Fedora/RHEL**：
@@ -111,6 +111,7 @@ sudo dnf install librime-devel ibus-rime
 ```bash
 sudo apt install librime-dev ibus-rime
 ```
+Ubuntu 22.04 官方源的 librime-dev/ibus-rime 版本偏旧，必要时请卸载后手动编译安装。
 
 然后重新安装：
 ```bash
@@ -373,10 +374,10 @@ grep "active sessions:" ~/.local/share/vocotype/ibus.log | tail -10
 
 **错误**：安装失败，onnxruntime无法安装
 
-**原因**：onnxruntime官方构建仅支持Python 3.10-3.12
+**原因**：onnxruntime官方构建仅支持Python 3.11-3.12
 
 **解决方案**：
-1. 使用Python 3.10、3.11或3.12
+1. 使用Python 3.11或3.12
 2. 安装 `uv` 工具自动管理Python版本：
    ```bash
    pip install uv
@@ -403,7 +404,7 @@ grep "active sessions:" ~/.local/share/vocotype/ibus.log | tail -10
 
 **Debian/Ubuntu**：
 ```bash
-sudo apt install build-essential pkg-config libcairo2-dev libgirepository-2.0-dev
+sudo apt install build-essential pkg-config libcairo2-dev libgirepository1.0-dev
 ```
 
 **Fedora/RHEL**：
@@ -439,6 +440,7 @@ sudo dnf install librime-devel ibus-rime
 ```bash
 sudo apt install librime-dev ibus-rime
 ```
+Ubuntu 22.04 官方源的 librime-dev/ibus-rime 版本偏旧，必要时请卸载后手动编译安装。
 
 **Arch**：
 ```bash

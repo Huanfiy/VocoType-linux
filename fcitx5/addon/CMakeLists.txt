@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
-project(fcitx5-vocotype VERSION 1.0.0)
+project(fcitx5-vocotype VERSION 2.1.1)
 
 # C++20 标准（Fcitx5 的日志宏需要）
 set(CMAKE_CXX_STANDARD 20)
