@@ -439,11 +439,8 @@ void VoCoTypeAddon::showError(fcitx::InputContext* ic, const std::string& error)
 }
 
 bool VoCoTypeAddon::isIMSwitchHotkey(const fcitx::Key& key) const {
-    // Ctrl+Space 或 Super+Space
+    // 只拦截 Super+Space (输入法切换)，不拦截 Ctrl+Space (中英切换)
     if (key.sym() == FcitxKey_space) {
-        if (key.states() & fcitx::KeyState::Ctrl) {
-            return true;
-        }
         if (key.states() & fcitx::KeyState::Super) {
             return true;
         }

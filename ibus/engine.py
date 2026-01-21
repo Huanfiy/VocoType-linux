@@ -574,8 +574,7 @@ class VoCoTypeEngine(IBus.Engine):
 
     def _is_ibus_switch_hotkey(self, keyval, state) -> bool:
         """让输入法切换热键走 IBus 全局处理"""
-        if keyval == IBus.KEY_space and state & IBus.ModifierType.CONTROL_MASK:
-            return True
+        # 只拦截 Super+Space (输入法切换)，不拦截 Ctrl+Space (中英切换)
         if keyval == IBus.KEY_space and state & (IBus.ModifierType.SUPER_MASK | IBus.ModifierType.MOD4_MASK):
             return True
         if keyval in (IBus.KEY_Shift_L, IBus.KEY_Shift_R) and state & IBus.ModifierType.MOD1_MASK:
