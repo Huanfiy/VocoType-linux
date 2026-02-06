@@ -22,6 +22,7 @@
 #include <signal.h>
 #include <thread>
 #include <chrono>
+#include <exception>
 
 namespace {
 
@@ -74,6 +75,14 @@ VoCoTypeAddon::VoCoTypeAddon(fcitx::Instance* instance)
 
     FCITX_INFO() << "VoCoType Addon initialized";
 
+    // 绑定线程安全调度器到 Fcitx 事件循环（兼容较旧的 Fcitx5 版本：
+    // Ubuntu 22.04 的 fcitx::Instance 没有 instance_->eventDispatcher() API）
+    try {
+        event_dispatcher_.attach(&instance_->eventLoop());
+    } catch (const std::exception &e) {
+        FCITX_ERROR() << "Failed to attach EventDispatcher: " << e.what();
+    }
+
     // 测试 Backend 连接
     if (ipc_client_->ping()) {
         FCITX_INFO() << "Backend connection OK";
@@ -83,6 +92,11 @@ VoCoTypeAddon::VoCoTypeAddon(fcitx::Instance* instance)
 }
 
 VoCoTypeAddon::~VoCoTypeAddon() {
+    try {
+        event_dispatcher_.detach();
+    } catch (...) {
+        // best-effort
+    }
     if (recorder_pid_ > 0 || recorder_stdout_ || recorder_stdin_fd_ >= 0) {
         std::string audio_path =
             stopRecorderProcess(recorder_pid_, recorder_stdin_fd_, recorder_stdout_);
@@ -326,13 +340,12 @@ void VoCoTypeAddon::stopRecording(fcitx::InputContext* ic, bool transcribe) {
         std::string audio_path = stopRecorderProcess(pid, stdin_fd, stdout_file);
         if (audio_path.empty()) {
             if (transcribe) {
-                instance_->eventDispatcher().scheduleWithContext(
-                    ic_ref, [this, ic_ref]() {
-                        auto* ic_ptr = ic_ref.get();
-                        if (ic_ptr) {
-                            showError(ic_ptr, "录音失败");
-                        }
-                    });
+                event_dispatcher_.schedule([this, ic_ref]() {
+                    auto* ic_ptr = ic_ref.get();
+                    if (ic_ptr) {
+                        showError(ic_ptr, "录音失败");
+                    }
+                });
             }
             return;
         }
@@ -345,21 +358,19 @@ void VoCoTypeAddon::stopRecording(fcitx::InputContext* ic, bool transcribe) {
         TranscribeResult result = ipc_client_->transcribeAudio(audio_path);
         std::remove(audio_path.c_str());
 
-        instance_->eventDispatcher().scheduleWithContext(
-            ic_ref, [this, ic_ref, result]() {
-                auto* ic_ptr = ic_ref.get();
-                if (!ic_ptr) {
-                    return;
-                }
-                if (result.success && !result.text.empty()) {
-                    commitText(ic_ptr, result.text);
-                } else if (!result.success) {
-                    showError(ic_ptr,
-                              result.error.empty() ? "转录失败" : result.error);
-                } else {
-                    clearUI(ic_ptr);
-                }
-            });
+        event_dispatcher_.schedule([this, ic_ref, result]() {
+            auto* ic_ptr = ic_ref.get();
+            if (!ic_ptr) {
+                return;
+            }
+            if (result.success && !result.text.empty()) {
+                commitText(ic_ptr, result.text);
+            } else if (!result.success) {
+                showError(ic_ptr, result.error.empty() ? "转录失败" : result.error);
+            } else {
+                clearUI(ic_ptr);
+            }
+        });
     }).detach();
 
     FCITX_INFO() << "Recording stopped";

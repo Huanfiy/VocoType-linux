@@ -81,7 +81,7 @@ fi
 
 # 检查 Fcitx 5 开发库（多种检测方式）
 fcitx5_found=false
-for pkg in Fcitx5Core fcitx5-core Fcitx5Module fcitx5; do
+for pkg in Fcitx5Core fcitx5core fcitx5-core Fcitx5Module fcitx5; do
     if pkg-config --exists "$pkg" 2>/dev/null; then
         fcitx5_found=true
         break
@@ -90,7 +90,9 @@ done
 
 if [ "$fcitx5_found" = false ]; then
     for include_dir in /usr/include /usr/local/include; do
-        if [ -f "$include_dir/Fcitx5/Core/fcitx/addoninstance.h" ] || \
+        if [ -f "$include_dir/fcitx5/fcitx/addoninstance.h" ] || \
+           [ -f "$include_dir/fcitx/addoninstance.h" ] || \
+           [ -f "$include_dir/Fcitx5/Core/fcitx/addoninstance.h" ] || \
            [ -f "$include_dir/fcitx5/core/addoninstance.h" ]; then
             fcitx5_found=true
             break
@@ -99,7 +101,7 @@ if [ "$fcitx5_found" = false ]; then
 fi
 
 if [ "$fcitx5_found" = false ]; then
-    missing_deps+=("fcitx5-devel (或 libfcitx5-dev)")
+    missing_deps+=("Fcitx5 开发库 (Debian/Ubuntu: libfcitx5core-dev；Fedora: fcitx5-devel)")
 fi
 
 # 检查 nlohmann-json
@@ -131,7 +133,7 @@ if [ ${#missing_deps[@]} -gt 0 ]; then
     done
     echo ""
     echo "安装命令参考:"
-    echo "  Debian/Ubuntu: sudo apt install cmake pkg-config libfcitx5-dev nlohmann-json3-dev"
+    echo "  Debian/Ubuntu: sudo apt install cmake pkg-config build-essential libfcitx5core-dev libfcitx5utils-dev libfcitx5config-dev nlohmann-json3-dev"
     echo "  Fedora:        sudo dnf install cmake pkgconfig fcitx5-devel json-devel"
     echo "  Arch:          sudo pacman -S cmake pkgconfig fcitx5 nlohmann-json"
     exit 1
@@ -243,12 +245,19 @@ if [ -z "$PYTHON_CMD" ]; then
     echo "解决方案："
     echo ""
     echo "  【推荐】安装 uv（自动管理 Python 版本和虚拟环境）："
-    echo "    curl -LsSf https://astral.sh/uv/install.sh | sh"
+    echo "    # 更可控的方式：先下载再查看脚本内容"
+    echo "    curl -LsSf https://astral.sh/uv/install.sh -o /tmp/uv-install.sh"
+    echo "    less /tmp/uv-install.sh"
+    echo "    sh /tmp/uv-install.sh"
+    echo ""
+    echo "    # 或者使用 pip 安装（同样需要联网）"
+    echo "    python3 -m pip install --user uv"
     echo "    然后重新打开终端，再运行本脚本"
     echo ""
-    echo "  或手动安装 Python 3.12："
+    echo "  或手动安装 Python 3.11/3.12："
     echo "    Fedora: sudo dnf install python3.12"
-    echo "    Ubuntu: sudo apt install python3.12"
+    echo "    Ubuntu 24.04+: sudo apt install python3.12"
+    echo "    Ubuntu 22.04:  建议使用 uv/pyenv，或添加 deadsnakes PPA 安装 python3.12"
     echo "    Arch:   sudo pacman -S python312"
     exit 1
 fi

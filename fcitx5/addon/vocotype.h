@@ -14,6 +14,7 @@
 #include <fcitx/inputmethodengine.h>
 #include <fcitx/inputmethodentry.h>
 #include <fcitx/inputcontextproperty.h>
+#include <fcitx-utils/eventdispatcher.h>
 #include <memory>
 #include <string>
 #include <sys/types.h>
@@ -88,6 +89,7 @@ private:
     bool isIMSwitchHotkey(const fcitx::Key& key) const;
 
     fcitx::Instance* instance_;
+    fcitx::EventDispatcher event_dispatcher_;
     std::unique_ptr<IPCClient> ipc_client_;
 
     // 录音状态
